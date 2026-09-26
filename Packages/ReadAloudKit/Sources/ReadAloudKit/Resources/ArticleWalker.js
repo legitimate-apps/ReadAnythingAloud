@@ -257,6 +257,51 @@
     this.flush();
   };
 
+  // Page furniture that Readability tends to keep: infoboxes, navboxes, edit links, reference backlinks,
+  // tables of contents, hatnotes ("For other uses, see…"), maintenance banners.
+  const BOILERPLATE = [".infobox", ".navbox", ".vertical-navbox", ".sidebar", ".metadata", ".hatnote",
+    ".mw-editsection", ".noprint", ".toc", "#toc", ".shortdescription", ".mw-jump-link", ".sistersitebox",
+    ".catlinks", ".navigation-not-searchable", ".ambox", ".mw-cite-backlink", "sup.reference", ".portalbox",
+    ".side-box", ".mbox-small", ".reflist", ".mw-references-wrap", "[role=navigation]", "[role=complementary]",
+    ".sr-only", ".visually-hidden", ".screen-reader-text", ".share-buttons", ".social-share", ".newsletter-signup",
+    "[data-testid=newsletter]", ".ad", ".advertisement", "[aria-label=advertisement]"];
+
+  function removeBoilerplate(doc) {
+    for (const sel of BOILERPLATE) {
+      try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch (e) { /* unsupported selector */ }
+    }
+  }
+
+  // Trailing apparatus that is noise when listened to. "Notes" is kept when it is prose (essays), dropped
+  // when it is a list of citations (encyclopedias).
+  const APPARATUS = /^(references|external links|citations|sources|bibliography|further reading|see also|works cited|notes and references|references and notes|footnotes|related (articles|stories|reading)|read more|more from .*)$/i;
+
+  function dropApparatus(blocks) {
+    const out = [];
+    let skipLevel = 0;
+    for (let i = 0; i < blocks.length; i++) {
+      const b = blocks[i];
+      if (b.k === "h") {
+        const text = b.runs.map(r => r.t).join("").trim();
+        if (skipLevel && b.level > skipLevel) continue;
+        skipLevel = 0;
+        let drop = APPARATUS.test(text);
+        if (!drop && /^notes$/i.test(text)) {
+          let j = i + 1, items = 0, other = 0;
+          for (; j < blocks.length && blocks[j].k !== "h"; j++) blocks[j].k === "li" ? items++ : other++;
+          drop = items > 0 && other === 0;
+        }
+        if (drop) { skipLevel = b.level; continue; }
+      } else if (skipLevel) {
+        continue;
+      }
+      out.push(b);
+    }
+    return out;
+  }
+
+  const CORPORATE = /\b(inc|llc|ltd|limited|foundation|corporation|corp|gmbh|plc|s\.a|co)\b\.?,?\s*$/i;
+
   function meta(names) {
     for (const n of names) {
       const el = document.querySelector(`meta[property="${n}"], meta[name="${n}"], meta[itemprop="${n}"]`);
@@ -296,17 +341,23 @@
       let root = null;
       if (mode !== "wholePage" && typeof Readability !== "undefined") {
         const clone = document.cloneNode(true);
+        removeBoilerplate(clone);
         article = new Readability(clone, { charThreshold: 250, keepClasses: false }).parse();
         if (article && article.content) {
           const parsed = new DOMParser().parseFromString(article.content, "text/html");
           root = parsed.body;
         }
       }
-      if (!root) root = document.body;
+      if (!root && document.body) {
+        const clone = document.cloneNode(true);
+        removeBoilerplate(clone);
+        root = clone.body;
+      }
       const walker = new Walker();
       if (root) walker.inline(root, {});
       walker.flush();
-      const blocks = walker.blocks;
+      const blocks = dropApparatus(walker.blocks);
+      const readabilitySite = article && article.siteName && !CORPORATE.test(article.siteName) ? article.siteName : null;
       const wordCount = countWords(blocks);
       const blocked = looksBlocked();
       return JSON.stringify({
@@ -314,7 +365,7 @@
         usedReadability: !!article,
         title: (article && article.title) || meta(["og:title", "twitter:title"]) || document.title || "",
         byline: (article && article.byline) || meta(["author", "article:author", "parsely-author"]),
-        siteName: (article && article.siteName) || meta(["og:site_name", "application-name"]),
+        siteName: meta(["og:site_name", "application-name"]) || readabilitySite,
         excerpt: (article && article.excerpt) || meta(["description", "og:description"]),
         lang: (article && article.lang) || base.lang,
         leadImage: base.leadImage,

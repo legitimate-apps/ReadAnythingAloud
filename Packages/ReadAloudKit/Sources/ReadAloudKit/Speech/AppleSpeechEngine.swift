@@ -33,6 +33,10 @@ public final class AppleSpeechEngine: SpeechEngine, @unchecked Sendable {
             }
     }
 
+    public static func voiceLanguage(identifier: String) -> String? {
+        AVSpeechSynthesisVoice(identifier: identifier)?.language
+    }
+
     /// Best installed voice for a language: premium, then enhanced, then default.
     public static func bestVoice(for language: String?) -> AVSpeechSynthesisVoice? {
         let lang = language ?? AVSpeechSynthesisVoice.currentLanguageCode()
@@ -62,10 +66,13 @@ public final class AppleSpeechEngine: SpeechEngine, @unchecked Sendable {
         var starts = [Double?](repeating: nil, count: request.wordRanges.count)
         for (range, frame) in render.marks {
             let t = Double(frame) / render.sampleRate
-            for (i, w) in request.wordRanges.enumerated() where starts[i] == nil {
-                if NSIntersectionRange(w.ns, range).length > 0 || (range.length == 0 && w.location == range.location) {
-                    starts[i] = t
-                }
+            // One callback can cover several display words ("well-known"); stamp only the first and let the
+            // aligner interpolate the rest.
+            if let i = request.wordRanges.indices.first(where: { i in
+                starts[i] == nil && (NSIntersectionRange(request.wordRanges[i].ns, range).length > 0
+                    || (range.length == 0 && request.wordRanges[i].location == range.location))
+            }) {
+                starts[i] = t
             }
         }
         let matched = starts.compactMap { $0 }.count

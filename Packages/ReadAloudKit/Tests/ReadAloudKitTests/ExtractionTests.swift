@@ -38,6 +38,38 @@ import Testing
         #expect(strong?.text == "faster than in 2019")
     }
 
+    @Test func encyclopediaFurnitureAndApparatusAreDropped() async throws {
+        let article = try await ArticleExtractor().extract(url: try fixture("encyclopedia"))
+        let text = article.blocks.map(\.plainText).joined(separator: "\n")
+        #expect(text.contains("Hummingbirds are birds native to the Americas"))
+        #expect(text.contains("eighty times per second"))
+        #expect(text.contains("Bee hummingbird"))            // data tables stay
+        #expect(!text.contains("Temporal range"))            // infobox
+        #expect(!text.contains("Animalia"))
+        #expect(!text.contains("For other uses"))            // hatnote
+        #expect(!text.contains("[edit]"))
+        #expect(!text.contains("[1]"))
+        #expect(!text.contains("navigation box"))
+        #expect(!text.contains("List of hummingbirds"))      // See also
+        #expect(!text.contains("361 species"))               // citation-list Notes
+        #expect(!text.contains("Example Press"))             // References
+        #expect(!text.contains("Hummingbird videos"))        // External links
+        #expect(article.siteName == nil)                     // corporate publisher name is not a site name
+        #expect(article.displayHost == nil || article.displayHost?.contains("Inc") == false)
+    }
+
+    @Test func proseNotesSectionIsKept() async throws {
+        let html = """
+        <html lang="en"><head><title>An Essay</title></head><body><article><h1>An Essay</h1>
+        <p>\(String(repeating: "Great work comes from curiosity, delight and the desire to do something impressive. ", count: 6))</p>
+        <h2>Notes</h2>
+        <p>[1] I mean this in the sense of a problem that takes years, not an afternoon, to understand properly.</p>
+        </article></body></html>
+        """
+        let article = try await ArticleExtractor().extract(html: html, baseURL: URL(string: "https://example.com/essay")!)
+        #expect(article.blocks.contains { $0.plainText.contains("takes years") })
+    }
+
     @Test func paywalledPageFailsGracefully() async throws {
         do {
             _ = try await ArticleExtractor().extract(url: try fixture("paywall"))

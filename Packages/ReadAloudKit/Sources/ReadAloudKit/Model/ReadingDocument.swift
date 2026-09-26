@@ -1,7 +1,7 @@
 import Foundation
 
 /// A UTF-16 range, the currency of TextKit (`NSRange`) but `Codable` and `Sendable`.
-public struct TextRange: Codable, Sendable, Hashable, CustomStringConvertible {
+public struct TextSpan: Codable, Sendable, Hashable, CustomStringConvertible {
     public var location: Int
     public var length: Int
 
@@ -19,7 +19,7 @@ public struct TextRange: Codable, Sendable, Hashable, CustomStringConvertible {
 
     public func contains(_ offset: Int) -> Bool { offset >= location && offset < upperBound }
 
-    public func offset(by delta: Int) -> TextRange { TextRange(location: location + delta, length: length) }
+    public func offset(by delta: Int) -> TextSpan { TextSpan(location: location + delta, length: length) }
 
     public var description: String { "[\(location), \(upperBound))" }
 }
@@ -34,9 +34,9 @@ public struct ReadingDocument: Sendable {
         public var index: Int
         public var kind: Block.Kind
         /// Full range of the block in `text`, including any list marker.
-        public var range: TextRange
+        public var range: TextSpan
         /// Range of the block's content (marker excluded).
-        public var contentRange: TextRange
+        public var contentRange: TextSpan
         /// Sentences belonging to this block (empty for unspoken blocks).
         public var sentenceIndices: Range<Int>
         /// Inline style runs, as ranges into `text`.
@@ -44,7 +44,7 @@ public struct ReadingDocument: Sendable {
     }
 
     public struct StyleSpan: Sendable, Hashable {
-        public var range: TextRange
+        public var range: TextSpan
         public var bold: Bool
         public var italic: Bool
         public var code: Bool
@@ -55,7 +55,7 @@ public struct ReadingDocument: Sendable {
         public var index: Int
         public var blockIndex: Int
         /// Range of the sentence in `text` (trimmed of surrounding whitespace).
-        public var range: TextRange
+        public var range: TextSpan
         /// Words of the sentence, as indices into `ReadingDocument.words`.
         public var wordIndices: Range<Int>
         /// Text handed to the speech engine. Same UTF-16 length as `range`, with unspeakable spans
@@ -68,7 +68,7 @@ public struct ReadingDocument: Sendable {
     public struct Word: Sendable, Hashable {
         public var index: Int
         public var sentenceIndex: Int
-        public var range: TextRange
+        public var range: TextSpan
     }
 
     public let articleID: UUID
@@ -88,12 +88,12 @@ public struct ReadingDocument: Sendable {
     }
 
     /// Substring for a range.
-    public func string(for range: TextRange) -> String {
+    public func string(for range: TextSpan) -> String {
         (text as NSString).substring(with: range.ns)
     }
 
     /// Words of a sentence, with ranges relative to the sentence's start (i.e. into `speechText`).
-    public func localWordRanges(ofSentence index: Int) -> [TextRange] {
+    public func localWordRanges(ofSentence index: Int) -> [TextSpan] {
         let sentence = sentences[index]
         return sentence.wordIndices.map { words[$0].range.offset(by: -sentence.range.location) }
     }

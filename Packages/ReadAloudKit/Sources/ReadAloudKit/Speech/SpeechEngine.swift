@@ -48,13 +48,13 @@ public struct VoiceInfo: Sendable, Hashable, Identifiable {
 public struct SynthesisRequest: Sendable, Hashable {
     /// Text to speak. Local word ranges index into it (UTF-16).
     public var text: String
-    public var wordRanges: [TextRange]
+    public var wordRanges: [TextSpan]
     public var voice: VoiceID
     /// Engine-side pacing (1.0 = natural). Playback speed is applied separately by time-stretching.
     public var pace: Float
     public var language: String?
 
-    public init(text: String, wordRanges: [TextRange], voice: VoiceID, pace: Float = 1.0, language: String? = nil) {
+    public init(text: String, wordRanges: [TextSpan], voice: VoiceID, pace: Float = 1.0, language: String? = nil) {
         self.text = text
         self.wordRanges = wordRanges
         self.voice = voice

@@ -53,7 +53,7 @@ public enum DocumentBuilder {
                     }
                     let len = runText.utf16.count
                     if len > 0, run.bold || run.italic || run.code || run.link != nil {
-                        styles.append(.init(range: TextRange(location: cursor, length: len),
+                        styles.append(.init(range: TextSpan(location: cursor, length: len),
                                             bold: run.bold, italic: run.italic, code: run.code, link: run.link))
                     }
                     assembled += runText
@@ -64,7 +64,7 @@ public enum DocumentBuilder {
             text += content
             utf16Length += content.utf16.count
 
-            let contentRange = TextRange(location: contentStart, length: content.utf16.count)
+            let contentRange = TextSpan(location: contentStart, length: content.utf16.count)
             let firstSentence = sentences.count
             if block.kind.isSpeakable {
                 segment(content, offset: contentStart, blockIndex: blockIndex, language: nlLanguage,
@@ -74,7 +74,7 @@ public enum DocumentBuilder {
                 }
             }
             layouts.append(.init(index: blockIndex, kind: block.kind,
-                                 range: TextRange(location: blockStart, length: utf16Length - blockStart),
+                                 range: TextSpan(location: blockStart, length: utf16Length - blockStart),
                                  contentRange: contentRange,
                                  sentenceIndices: firstSentence..<sentences.count,
                                  styles: styles))
@@ -107,8 +107,29 @@ public enum DocumentBuilder {
            simplify(first.plainText) == simplify(title) {
             body.removeAll { $0 == first }
         }
-        result.append(contentsOf: body)
+        result.append(contentsOf: attachingStrayFootnotes(body))
         return result
+    }
+
+    /// Some sites (Paul Graham's essays, older blogs) put a footnote marker like "[5]" on its own line after the
+    /// paragraph it annotates. Shown alone it reads as a stray paragraph, so fold it into the preceding text block.
+    static func attachingStrayFootnotes(_ blocks: [Block]) -> [Block] {
+        var out: [Block] = []
+        for block in blocks {
+            let text = block.plainText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if block.kind == .paragraph, isFootnoteMarker(text), let last = out.indices.last, out[last].kind.isSpeakable {
+                var runs = block.runs
+                if let i = runs.indices.first { runs[i].text = " " + runs[i].text.drop(while: \.isWhitespace) }
+                out[last].runs.append(contentsOf: runs)
+                continue
+            }
+            out.append(block)
+        }
+        return out
+    }
+
+    static func isFootnoteMarker(_ text: String) -> Bool {
+        text.range(of: #"^(\[\w{1,3}\]\s*)+$"#, options: .regularExpression) != nil
     }
 
     static func listMarker(for kind: Block.Kind) -> String {
@@ -158,10 +179,10 @@ public enum DocumentBuilder {
             let firstWord = words.count
             for w in localWords {
                 words.append(.init(index: words.count, sentenceIndex: sentenceIndex,
-                                   range: TextRange(location: offset + local.location + w.location, length: w.length)))
+                                   range: TextSpan(location: offset + local.location + w.location, length: w.length)))
             }
             sentences.append(.init(index: sentenceIndex, blockIndex: blockIndex,
-                                   range: TextRange(location: offset + local.location, length: local.length),
+                                   range: TextSpan(location: offset + local.location, length: local.length),
                                    wordIndices: firstWord..<words.count,
                                    speechText: sentenceText,
                                    endsBlock: false))

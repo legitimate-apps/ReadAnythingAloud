@@ -47,11 +47,11 @@ public actor KokoroEngine: SpeechEngine {
         }
     }
 
-    public func voices() async -> [VoiceInfo] {
-        Self.englishVoices.map { id, name, detail in
-            VoiceInfo(id: VoiceID(engine: .kokoro, identifier: id), name: name,
-                      language: id.hasPrefix("b") ? "en-GB" : "en-US", detail: detail)
-        }
+    public func voices() async -> [VoiceInfo] { Self.catalog }
+
+    public nonisolated static let catalog: [VoiceInfo] = englishVoices.map { id, name, detail in
+        VoiceInfo(id: VoiceID(engine: .kokoro, identifier: id), name: name,
+                  language: id.hasPrefix("b") ? "en-GB" : "en-US", detail: detail)
     }
 
     public func synthesize(_ request: SynthesisRequest) async throws -> SynthesizedClip {

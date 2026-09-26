@@ -75,6 +75,18 @@ import Testing
         #expect(words == ["It", "was", "true", "as", "shown", "at", "today"])
     }
 
+    @Test func strayFootnoteMarkersJoinThePreviousParagraph() {
+        let doc = DocumentBuilder.build(article([
+            Block(kind: .paragraph, text: "Ask lots of questions."),
+            Block(kind: .paragraph, runs: [InlineRun(text: "["), InlineRun(text: "5", link: URL(string: "https://e.com/#f5")), InlineRun(text: "]")]),
+            Block(kind: .paragraph, text: "Next paragraph."),
+        ], title: ""))
+        #expect(doc.blocks.count == 2)
+        #expect(doc.string(for: doc.blocks[0].contentRange) == "Ask lots of questions. [5]")
+        #expect(doc.blocks[0].styles.contains { $0.link != nil })
+        #expect(doc.words.map { doc.string(for: $0.range) } == ["Ask", "lots", "of", "questions", "Next", "paragraph"])
+    }
+
     @Test func inlineStylesAndWhitespaceAcrossRuns() {
         let doc = DocumentBuilder.build(article([
             Block(kind: .paragraph, runs: [
