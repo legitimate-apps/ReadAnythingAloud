@@ -16,6 +16,36 @@ public struct ReadingProgress: Codable, Sendable, Hashable {
     }
 }
 
+extension ReadingProgress {
+    /// The same place in a re-extracted version of the document. Sentence indices shift whenever extraction
+    /// changes (a merged footnote, a dropped banner), so the sentence is found again by its text — the match
+    /// nearest the old position — falling back to the same relative text offset.
+    public func remapped(from old: ReadingDocument, to new: ReadingDocument) -> ReadingProgress {
+        guard old.sentences.indices.contains(sentence), !new.sentences.isEmpty else { return self }
+        let key = { (doc: ReadingDocument, i: Int) in
+            doc.string(for: doc.sentences[i].range).lowercased().filter { $0.isLetter || $0.isNumber }
+        }
+        let target = key(old, sentence)
+        let matches = target.isEmpty ? [] : new.sentences.indices.filter { key(new, $0) == target }
+        let oldOffset = Double(old.sentences[sentence].range.location) / Double(max(1, (old.text as NSString).length))
+        let newIndex: Int
+        if let nearest = matches.min(by: { abs($0 - sentence) < abs($1 - sentence) }) {
+            newIndex = nearest
+        } else {
+            newIndex = new.sentenceIndex(atOffset: Int(oldOffset * Double((new.text as NSString).length))) ?? 0
+        }
+        var word: Int?
+        if let oldWord = self.word, old.sentences[sentence].wordIndices.contains(oldWord), !matches.isEmpty {
+            let within = oldWord - old.sentences[sentence].wordIndices.lowerBound
+            let range = new.sentences[newIndex].wordIndices
+            word = range.isEmpty ? nil : min(range.lowerBound + within, range.upperBound - 1)
+        } else {
+            word = new.sentences[newIndex].wordIndices.first
+        }
+        return ReadingProgress(sentence: newIndex, word: word, fraction: fraction, updatedAt: updatedAt)
+    }
+}
+
 /// Lightweight row for the library list (the full article is loaded on open).
 public struct ArticleSummary: Codable, Sendable, Hashable, Identifiable {
     public var id: UUID
@@ -76,6 +106,9 @@ public final class LibraryStore {
             article.id = existing.id
             article.addedAt = existing.addedAt
             progress = existing.progress
+            if let saved = progress, let previous = self.article(existing.id) {
+                progress = saved.remapped(from: DocumentBuilder.build(previous), to: DocumentBuilder.build(article))
+            }
             items.removeAll { $0.id == existing.id }
         }
         if let data = try? JSONEncoder.library.encode(article) {

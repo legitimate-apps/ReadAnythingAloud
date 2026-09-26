@@ -143,4 +143,29 @@ import Testing
         #expect(doc.text.contains("Arthur Burns"))
         #expect(doc.text.contains("12 min read"), "only the first few blocks are considered")
     }
+
+    @Test func progressFollowsTheSentenceAcrossReExtraction() {
+        let id = UUID()
+        var before = Article(title: "Essay", blocks: [
+            Block(kind: .paragraph, text: "First point here."),
+            Block(kind: .paragraph, text: "Subscribe to our newsletter today. It is free."),
+            Block(kind: .paragraph, text: "[1] A note."),
+            Block(kind: .paragraph, text: "Second point is here. The reader stopped in this very sentence."),
+        ])
+        before.id = id
+        var after = Article(title: "Essay", blocks: [
+            Block(kind: .paragraph, text: "First point here."),
+            Block(kind: .paragraph, text: "[1] A note."),
+            Block(kind: .paragraph, text: "Second point is here. The reader stopped in this very sentence."),
+        ])
+        after.id = id
+        let old = DocumentBuilder.build(before), new = DocumentBuilder.build(after)
+        let oldIndex = old.sentences.firstIndex { old.string(for: $0.range).hasPrefix("The reader stopped") }!
+        let oldWord = old.sentences[oldIndex].wordIndices.lowerBound + 2   // "stopped"
+        let progress = ReadingProgress(sentence: oldIndex, word: oldWord, fraction: 0.8)
+        let mapped = progress.remapped(from: old, to: new)
+        #expect(new.string(for: new.sentences[mapped.sentence].range).hasPrefix("The reader stopped"))
+        #expect(mapped.word.map { new.string(for: new.words[$0].range) } == "stopped")
+        #expect(mapped.sentence != oldIndex, "the fixture must actually shift sentence indices")
+    }
 }

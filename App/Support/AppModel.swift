@@ -248,9 +248,10 @@ final class AppModel {
                     session?.rate = value
                 }
             default:
-                // readanythingaloud://add?url=https://…
-                if let target = components?.queryItems?.first(where: { $0.name == "url" })?.value.flatMap(URL.init(string:)) {
-                    add(url: target)
+                // readanythingaloud://add?url=https://…[&refresh=1]
+                let items = components?.queryItems ?? []
+                if let target = items.first(where: { $0.name == "url" })?.value.flatMap(URL.init(string:)) {
+                    add(url: target, refresh: items.contains { $0.name == "refresh" && $0.value == "1" })
                 }
             }
             return
