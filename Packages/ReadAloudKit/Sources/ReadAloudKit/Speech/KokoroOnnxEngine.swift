@@ -52,10 +52,12 @@ public actor KokoroOnnxEngine: SpeechEngine {
     private struct Loaded: Sendable {
         let graph: KokoroOnnxGraph
         let frontend: KokoroAneManager
-        let store: KokoroAneModelStore
+        let vocab: KokoroAneVocab
+        let repoDirectory: URL
     }
 
     private var loaded: Loaded?
+    private var voicePacks: [String: KokoroAneVoicePack] = [:]
     private var initializing: Task<Loaded, Error>?
     private let intraOpThreads: Int
 
@@ -89,13 +91,18 @@ public actor KokoroOnnxEngine: SpeechEngine {
                 try await ModelDownloader.fetch(Self.modelDownloadURL, to: modelURL, sha256: Self.modelSHA256,
                                                 expectedBytes: Self.modelByteCount, progress: progress)
             }
-            // The frontend's Core ML chain is loaded CPU-only and never executed; only its G2P, vocab and voice
-            // packs are used. (FluidAudio exposes its English phonemizer only through the manager.)
+            // FluidAudio builds its English phonemizer only through the manager, which loads the whole Core ML chain
+            // first. Build the phonemizer once (the manager caches it), then release the chain — it is never
+            // executed here and holds hundreds of MB — and read the vocab and voice packs from disk directly.
             let store = KokoroAneModelStore(computeUnits: .cpuOnly, variant: .english)
             let frontend = KokoroAneManager(variant: .english, computeUnits: .cpuOnly, modelStore: store)
             try await frontend.initialize()
+            _ = try await frontend.phonemes(for: "Hello there.")
+            let repoDirectory = try await KokoroAneResourceDownloader.ensureModels(variant: .english)
+            let vocab = try KokoroAneVocab.load(from: repoDirectory.appendingPathComponent(ModelNames.KokoroAne.vocab))
+            await store.cleanup()
             let graph = try KokoroOnnxGraph(modelPath: modelURL.path, intraOpThreads: threads)
-            return Loaded(graph: graph, frontend: frontend, store: store)
+            return Loaded(graph: graph, frontend: frontend, vocab: vocab, repoDirectory: repoDirectory)
         }
         initializing = task
         do {
@@ -126,8 +133,8 @@ public actor KokoroOnnxEngine: SpeechEngine {
         // Same frontend as the Core ML engine: `phonemes(for:)` normalizes with NeMo and phonemizes.
         let normalizedText = NemoTextNormalizer.normalize(text, language: .english)
         let phonemes = try await loaded.frontend.phonemes(for: text)
-        let inputIds = try await loaded.store.vocabulary().encode(phonemes)
-        let pack = try await loaded.store.voicePack(request.voice.identifier)
+        let inputIds = try loaded.vocab.encode(phonemes)
+        let pack = try await voicePack(request.voice.identifier, in: loaded.repoDirectory)
         let style = Self.styleRow(pack, phonemeCount: KokoroAneVocab.phonemeLength(phonemes))
 
         let output = try await loaded.graph.run(inputIds: inputIds, style: style, speed: request.pace)
@@ -150,6 +157,14 @@ public actor KokoroOnnxEngine: SpeechEngine {
     }
 
     static let sampleRate: Double = 24_000
+
+    private func voicePack(_ voice: String, in repoDirectory: URL) async throws -> KokoroAneVoicePack {
+        if let cached = voicePacks[voice] { return cached }
+        let url = try await KokoroAneResourceDownloader.ensureVoicePack(voice, repoDirectory: repoDirectory)
+        let pack = try KokoroAneVoicePack.load(from: url)
+        voicePacks[voice] = pack
+        return pack
+    }
 
     /// The graph's `style` input: the voice pack's full 256-float row for this phoneme count (timbre half first,
     /// prosody half second — the order of Kokoro's `ref_s`, which is how FluidAudio's `.bin` packs are stored).

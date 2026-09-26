@@ -238,6 +238,12 @@ final class AppModel {
             case "play": session?.play()          // readanythingaloud://play (Shortcuts, automation)
             case "pause": session?.pause()
             case "toggle": session?.togglePlayPause()
+            case "next": session?.skipSentence(1)
+            case "previous": session?.skipSentence(-1)
+            case "rate":                          // readanythingaloud://rate?value=1.5
+                if let value = components?.queryItems?.first(where: { $0.name == "value" })?.value.flatMap(Float.init) {
+                    session?.rate = value
+                }
             default:
                 // readanythingaloud://add?url=https://…
                 if let target = components?.queryItems?.first(where: { $0.name == "url" })?.value.flatMap(URL.init(string:)) {
