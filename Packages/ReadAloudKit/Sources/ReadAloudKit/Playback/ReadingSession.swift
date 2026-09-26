@@ -42,12 +42,19 @@ public final class ReadingSession {
     @ObservationIgnored private var lastSavedSentence = -1
     @ObservationIgnored private var lastSaveTime = Date.distantPast
     @ObservationIgnored private var voiceTask: Task<Void, Never>?
+    /// Replaces the settings' engine (tests).
+    @ObservationIgnored private let engineOverride: (any SpeechEngine)?
 
     /// Media-time duration of each synthesized sentence clip, including its trailing pause.
     private var durations: [Double?]
     private var secondsPerUnit = 0.062
 
-    public init(article: Article, library: LibraryStore?, settings: VoiceSettings = .shared) {
+    public convenience init(article: Article, library: LibraryStore?, settings: VoiceSettings = .shared) {
+        self.init(article: article, library: library, settings: settings, engine: nil)
+    }
+
+    init(article: Article, library: LibraryStore?, settings: VoiceSettings, engine: (any SpeechEngine)?) {
+        self.engineOverride = engine
         self.article = article
         self.document = DocumentBuilder.build(article)
         self.library = library
@@ -133,6 +140,13 @@ public final class ReadingSession {
     }
 
     public func pause() {
+        if preparingMessage != nil {
+            // Pausing while the voice loads cancels the pending start; the load itself carries on.
+            voiceTask?.cancel()
+            voiceTask = nil
+            preparingMessage = nil
+            state = .idle
+        }
         player.pause()
         saveProgress(force: true)
     }
@@ -161,16 +175,12 @@ public final class ReadingSession {
         seek(fraction: totalDuration > 0 ? target / totalDuration : 0)
     }
 
-    /// Tap on a word: play from there.
-    public func play(fromWord index: Int) {
+    /// Tap on a word: moves the playhead there. Playback keeps going if it was playing and stays paused (or
+    /// stopped) otherwise; the next play starts from the tapped word.
+    public func select(word index: Int) {
         guard document.words.indices.contains(index) else { return }
-        let s = document.words[index].sentenceIndex
         errorMessage = nil
-        if isPlaying {
-            jump(sentence: s, word: index)
-        } else {
-            start(sentence: s, word: index)
-        }
+        jump(sentence: document.words[index].sentenceIndex, word: index)
     }
 
     public func jump(sentence target: Int, word targetWord: Int?) {
@@ -178,8 +188,9 @@ public final class ReadingSession {
         sentence = target
         word = targetWord ?? document.sentences[target].wordIndices.first
         jumpCounter += 1
-        if isPlaying {
-            player.seek(sentence: target, word: targetWord)
+        if preparingMessage != nil {
+            // Still waiting for the voice to load: start from the new spot once it's ready.
+            start(sentence: target, word: targetWord)
         } else if state != .idle {
             player.seek(sentence: target, word: targetWord)
         }
@@ -243,7 +254,7 @@ public final class ReadingSession {
         #else
         let lookahead = 60
         #endif
-        let q = SynthesisQueue(document: document, engine: settings.engine(for: voice.engine), voice: voice,
+        let q = SynthesisQueue(document: document, engine: engineOverride ?? settings.engine(for: voice.engine), voice: voice,
                                pace: 1, lookahead: lookahead)
         Task { [weak self] in
             await q.setClipObserver { index, duration in

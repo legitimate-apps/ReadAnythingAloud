@@ -52,6 +52,56 @@ struct FakeEngine: SpeechEngine {
         session.close()
     }
 
+    /// Tapping a word moves the playhead but never changes whether audio is playing.
+    @Test func tappingAWordKeepsThePlayOrPauseState() async throws {
+        let text = (0..<4).map { "Alpha beta gamma delta number \($0)." }.joined(separator: " ")
+        let article = Article(title: "T", language: "en", blocks: [Block(kind: .paragraph, text: text)])
+        let settings = VoiceSettings(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        settings.preferredVoice = VoiceID(engine: .apple, identifier: "")
+        let session = ReadingSession(article: article, library: nil, settings: settings, engine: FakeEngine())
+        defer { session.close() }
+        let doc = session.document
+        func wordIn(_ sentence: Int) -> Int {
+            let words = doc.sentences[sentence].wordIndices
+            return words.lowerBound + min(2, words.count - 1)
+        }
+        func waitFor(_ state: SpeechPlayer.State) async throws {
+            let deadline = Date().addingTimeInterval(10)
+            while session.state != state, Date() < deadline { try await Task.sleep(for: .milliseconds(20)) }
+            try #require(session.state == state)
+        }
+
+        // Never started: the tap only moves the highlight.
+        session.select(word: wordIn(2))
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(session.state == .idle)
+        #expect(session.sentence == 2 && session.word == wordIn(2))
+
+        // Play starts from the tapped word.
+        session.play()
+        try await waitFor(.playing)
+        #expect(session.sentence == 2)
+
+        // Paused: the tap moves the playhead and it stays paused.
+        session.pause()
+        try await waitFor(.paused)
+        session.select(word: wordIn(0))
+        try await Task.sleep(for: .milliseconds(500))
+        #expect(session.state == .paused)
+        #expect(session.sentence == 0 && session.word == wordIn(0))
+
+        // Resuming plays from there.
+        session.play()
+        try await waitFor(.playing)
+        #expect(session.sentence == 0)
+
+        // Playing: the tap jumps and playback continues.
+        session.select(word: wordIn(3))
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(session.isPlaying)
+        #expect(session.sentence == 3)
+    }
+
     @Test func clipCacheRoundTripsSamplesAndTimings() async throws {
         let cache = tempCache()
         let clip = SynthesizedClip(samples: (0..<24_000).map { Float(sin(Double($0) * 0.01)) * 0.5 }, sampleRate: 24_000,

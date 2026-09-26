@@ -27,7 +27,7 @@ struct ReaderView: View {
                 ),
                 onTapWord: { word in
                     follow = true
-                    session.play(fromWord: word)
+                    session.select(word: word)
                 },
                 onUserScroll: { follow = false }
             )
