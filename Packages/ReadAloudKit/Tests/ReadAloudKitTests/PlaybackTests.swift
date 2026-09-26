@@ -153,8 +153,13 @@ struct FakeEngine: SpeechEngine {
         player.load(queue)
         let target = doc.sentences[2].wordIndices.lowerBound + 3
         player.play(sentence: 2, word: target)
-        try await Task.sleep(for: .milliseconds(400))
-        let pos = try #require(player.position)
+        // Wait for audio to actually start (under heavy machine load the first clip can take a while), then give
+        // it a moment to advance.
+        let deadline = Date().addingTimeInterval(10)
+        while player.state != .playing, Date() < deadline { try await Task.sleep(for: .milliseconds(20)) }
+        try #require(player.state == .playing)
+        try await Task.sleep(for: .milliseconds(150))
+        let pos = try #require(player.livePosition())
         player.stop()
         #expect(pos.sentence == 2)
         #expect(pos.word.map { $0 >= target - 1 } == true)
