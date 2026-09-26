@@ -1,0 +1,330 @@
+// ReadAnythingAloud article walker (MIT).
+// Runs inside the page after Readability.js is injected. Produces a JSON-serializable article:
+// { ok, title, byline, siteName, lang, excerpt, leadImage, publishedTime, blocks: [...], wordCount, reason }
+// Block shapes: {k:"h", level, runs} {k:"p", runs} {k:"li", ordered, number, depth, runs} {k:"quote", runs}
+//               {k:"code", text} {k:"img", src, alt} {k:"caption", runs} {k:"hr"}
+// Run shape: {t, b?, i?, c?, a?}
+(function () {
+  "use strict";
+
+  const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "SVG", "BUTTON", "INPUT", "SELECT",
+    "TEXTAREA", "FORM", "NAV", "IFRAME", "VIDEO", "AUDIO", "CANVAS", "OBJECT", "EMBED", "MATH"]);
+  const BLOCK_TAGS = new Set(["P", "DIV", "SECTION", "ARTICLE", "MAIN", "HEADER", "FOOTER", "ASIDE", "H1", "H2",
+    "H3", "H4", "H5", "H6", "UL", "OL", "LI", "BLOCKQUOTE", "PRE", "FIGURE", "FIGCAPTION", "IMG", "PICTURE", "HR",
+    "TABLE", "THEAD", "TBODY", "TFOOT", "TR", "TD", "TH", "DL", "DT", "DD", "DETAILS", "SUMMARY", "CAPTION"]);
+
+  function absolute(url) {
+    if (!url) return null;
+    try { return new URL(url, document.baseURI).href; } catch (e) { return null; }
+  }
+
+  function bestImageSource(img) {
+    const candidates = [];
+    const srcset = img.getAttribute("srcset") || img.getAttribute("data-srcset");
+    if (srcset) {
+      for (const part of srcset.split(",")) {
+        const [u, d] = part.trim().split(/\s+/);
+        const w = d && d.endsWith("w") ? parseInt(d) : d && d.endsWith("x") ? parseFloat(d) * 1000 : 1;
+        if (u) candidates.push({ u, w });
+      }
+      candidates.sort((a, b) => b.w - a.w);
+      // Prefer a reasonably sized rendition over a huge original.
+      const good = candidates.find(c => c.w <= 1600) || candidates[candidates.length - 1];
+      if (good) return absolute(good.u);
+    }
+    const src = img.getAttribute("src") || img.getAttribute("data-src") || img.getAttribute("data-lazy-src") ||
+      img.getAttribute("data-original");
+    if (src && !src.startsWith("data:")) return absolute(src);
+    return null;
+  }
+
+  function Walker() {
+    this.blocks = [];
+    this.runs = null;          // pending inline runs
+    this.kind = null;          // pending block descriptor
+  }
+
+  Walker.prototype.flush = function () {
+    if (this.runs && this.runs.some(r => r.t.trim().length > 0)) {
+      const block = Object.assign({}, this.kind || { k: "p" });
+      block.runs = mergeRuns(this.runs);
+      this.blocks.push(block);
+    }
+    this.runs = null;
+    this.kind = null;
+  };
+
+  Walker.prototype.begin = function (kind) {
+    this.flush();
+    this.kind = kind;
+    this.runs = [];
+  };
+
+  Walker.prototype.text = function (t, style) {
+    if (!t) return;
+    if (!this.runs) { this.runs = []; this.kind = this.kind || { k: "p" }; }
+    const run = { t };
+    if (style.b) run.b = true;
+    if (style.i) run.i = true;
+    if (style.c) run.c = true;
+    if (style.a) run.a = style.a;
+    this.runs.push(run);
+  };
+
+  function mergeRuns(runs) {
+    const out = [];
+    for (const r of runs) {
+      const last = out[out.length - 1];
+      if (last && !!last.b === !!r.b && !!last.i === !!r.i && !!last.c === !!r.c && last.a === r.a) {
+        last.t += r.t;
+      } else {
+        out.push(Object.assign({}, r));
+      }
+    }
+    return out;
+  }
+
+  function isFootnoteRef(el) {
+    if (el.tagName !== "SUP") return false;
+    const t = el.textContent.trim();
+    return /^\[?\d{1,3}\]?$/.test(t) || /^\[?[a-z]\]?$/.test(t);
+  }
+
+  function isHidden(el) {
+    if (el.hidden || el.getAttribute("aria-hidden") === "true") return true;
+    const style = el.getAttribute("style") || "";
+    return /display\s*:\s*none|visibility\s*:\s*hidden/i.test(style);
+  }
+
+  Walker.prototype.inline = function (node, style) {
+    for (const child of Array.from(node.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        this.text(child.nodeValue, style);
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        this.element(child, style);
+      }
+    }
+  };
+
+  Walker.prototype.listDepth = 0;
+
+  Walker.prototype.element = function (el, style) {
+    const tag = el.tagName.toUpperCase();
+    if (SKIP_TAGS.has(tag) || isHidden(el)) return;
+    if (isFootnoteRef(el)) return;
+
+    switch (tag) {
+      case "H1": case "H2": case "H3": case "H4": case "H5": case "H6":
+        this.begin({ k: "h", level: parseInt(tag[1]) });
+        this.inline(el, style);
+        this.flush();
+        return;
+      case "P": case "DT": case "DD": case "SUMMARY":
+        this.begin(this.inQuote ? { k: "quote" } : { k: "p" });
+        this.inline(el, style);
+        this.flush();
+        return;
+      case "BR":
+        this.text(" ", style);
+        return;
+      case "HR":
+        this.flush();
+        this.blocks.push({ k: "hr" });
+        return;
+      case "PRE": {
+        this.flush();
+        const text = el.textContent.replace(/\s+$/, "");
+        if (text.trim()) this.blocks.push({ k: "code", text });
+        return;
+      }
+      case "IMG": {
+        const src = bestImageSource(el);
+        const w = parseInt(el.getAttribute("width") || "0");
+        const h = parseInt(el.getAttribute("height") || "0");
+        if (src && !(w && w < 48) && !(h && h < 48)) {
+          this.flush();
+          this.blocks.push({ k: "img", src, alt: (el.getAttribute("alt") || "").trim() || null });
+        }
+        return;
+      }
+      case "PICTURE": {
+        const img = el.querySelector("img");
+        if (img) this.element(img, style);
+        return;
+      }
+      case "FIGURE": {
+        this.flush();
+        for (const child of Array.from(el.children)) {
+          if (child.tagName.toUpperCase() === "FIGCAPTION") continue;
+          this.element(child, style);
+        }
+        const cap = el.querySelector("figcaption");
+        if (cap && cap.textContent.trim()) {
+          this.begin({ k: "caption" });
+          this.inline(cap, style);
+          this.flush();
+        }
+        return;
+      }
+      case "FIGCAPTION":
+        this.begin({ k: "caption" });
+        this.inline(el, style);
+        this.flush();
+        return;
+      case "UL": case "OL": {
+        this.flush();
+        const ordered = tag === "OL";
+        let number = parseInt(el.getAttribute("start") || "1") || 1;
+        this.listDepth++;
+        for (const li of Array.from(el.children)) {
+          if (li.tagName.toUpperCase() !== "LI") { this.element(li, style); continue; }
+          this.listItem(li, ordered, number, style);
+          number++;
+        }
+        this.listDepth--;
+        return;
+      }
+      case "LI":
+        this.listItem(el, false, 1, style);
+        return;
+      case "BLOCKQUOTE": {
+        this.flush();
+        const wasQuote = this.inQuote;
+        this.inQuote = true;
+        this.begin({ k: "quote" });
+        this.inline(el, style);
+        this.flush();
+        this.inQuote = wasQuote;
+        return;
+      }
+      case "TABLE": {
+        this.flush();
+        for (const row of Array.from(el.querySelectorAll("tr"))) {
+          const cells = Array.from(row.children).map(c => c.textContent.replace(/\s+/g, " ").trim()).filter(Boolean);
+          if (cells.length) this.blocks.push({ k: "p", runs: [{ t: cells.join(" · ") }] });
+        }
+        return;
+      }
+      case "STRONG": case "B":
+        this.inline(el, Object.assign({}, style, { b: true }));
+        return;
+      case "EM": case "I": case "CITE": case "DFN":
+        this.inline(el, Object.assign({}, style, { i: true }));
+        return;
+      case "CODE": case "KBD": case "SAMP": case "TT":
+        this.inline(el, Object.assign({}, style, { c: true }));
+        return;
+      case "A": {
+        const href = absolute(el.getAttribute("href"));
+        this.inline(el, Object.assign({}, style, href && /^https?:/.test(href) ? { a: href } : {}));
+        return;
+      }
+      default:
+        if (BLOCK_TAGS.has(tag)) {
+          // Generic container: text directly inside it forms its own paragraph(s).
+          this.flush();
+          if (this.inQuote) this.kind = { k: "quote" };
+          this.inline(el, style);
+          this.flush();
+        } else {
+          this.inline(el, style);
+        }
+    }
+  };
+
+  Walker.prototype.listItem = function (li, ordered, number, style) {
+    this.begin({ k: "li", ordered, number, depth: Math.max(0, this.listDepth - 1) });
+    for (const child of Array.from(li.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        if (!this.runs) this.begin({ k: "li", ordered, number, depth: Math.max(0, this.listDepth - 1) });
+        this.text(child.nodeValue, style);
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        const t = child.tagName.toUpperCase();
+        if (t === "UL" || t === "OL") {
+          this.flush();
+          this.element(child, style);
+        } else if (t === "P" || t === "DIV") {
+          // Paragraphs inside an item continue the item.
+          if (!this.runs) this.begin({ k: "li", ordered, number, depth: Math.max(0, this.listDepth - 1) });
+          else this.text(" ", style);
+          this.inline(child, style);
+        } else {
+          if (!this.runs) this.begin({ k: "li", ordered, number, depth: Math.max(0, this.listDepth - 1) });
+          this.element(child, style);
+        }
+      }
+    }
+    this.flush();
+  };
+
+  function meta(names) {
+    for (const n of names) {
+      const el = document.querySelector(`meta[property="${n}"], meta[name="${n}"], meta[itemprop="${n}"]`);
+      const c = el && el.getAttribute("content");
+      if (c && c.trim()) return c.trim();
+    }
+    return null;
+  }
+
+  function countWords(blocks) {
+    let n = 0;
+    for (const b of blocks) {
+      if (!b.runs || b.k === "caption") continue;
+      for (const r of b.runs) n += (r.t.match(/[\p{L}\p{N}]+/gu) || []).length;
+    }
+    return n;
+  }
+
+  function looksBlocked() {
+    const t = (document.title + " " + (document.body ? document.body.innerText.slice(0, 3000) : "")).toLowerCase();
+    const signals = ["subscribe to continue", "subscribe to read", "to continue reading", "create a free account",
+      "sign in to continue", "log in to continue", "this content is for subscribers", "already a subscriber",
+      "verify you are human", "are you a robot", "checking your browser", "enable javascript and cookies",
+      "access denied", "unusual traffic", "captcha", "just a moment"];
+    return signals.find(s => t.includes(s)) || null;
+  }
+
+  window.__readAloudExtract = function (mode) {
+    try {
+      const base = {
+        lang: document.documentElement.getAttribute("lang") || meta(["og:locale", "language"]),
+        leadImage: absolute(meta(["og:image", "og:image:url", "twitter:image", "twitter:image:src"])),
+        publishedTime: meta(["article:published_time", "datePublished", "pubdate", "date", "dc.date"]),
+        pageTitle: document.title || null,
+      };
+      let article = null;
+      let root = null;
+      if (mode !== "wholePage" && typeof Readability !== "undefined") {
+        const clone = document.cloneNode(true);
+        article = new Readability(clone, { charThreshold: 250, keepClasses: false }).parse();
+        if (article && article.content) {
+          const parsed = new DOMParser().parseFromString(article.content, "text/html");
+          root = parsed.body;
+        }
+      }
+      if (!root) root = document.body;
+      const walker = new Walker();
+      if (root) walker.inline(root, {});
+      walker.flush();
+      const blocks = walker.blocks;
+      const wordCount = countWords(blocks);
+      const blocked = looksBlocked();
+      return JSON.stringify({
+        ok: wordCount >= 60 || (wordCount >= 25 && !blocked),
+        usedReadability: !!article,
+        title: (article && article.title) || meta(["og:title", "twitter:title"]) || document.title || "",
+        byline: (article && article.byline) || meta(["author", "article:author", "parsely-author"]),
+        siteName: (article && article.siteName) || meta(["og:site_name", "application-name"]),
+        excerpt: (article && article.excerpt) || meta(["description", "og:description"]),
+        lang: (article && article.lang) || base.lang,
+        leadImage: base.leadImage,
+        publishedTime: (article && article.publishedTime) || base.publishedTime,
+        blocks,
+        wordCount,
+        reason: blocked,
+      });
+    } catch (e) {
+      return JSON.stringify({ ok: false, error: String(e && e.stack || e), blocks: [], wordCount: 0 });
+    }
+  };
+})();
