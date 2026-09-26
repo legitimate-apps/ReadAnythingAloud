@@ -88,14 +88,32 @@ public final class ArticleExtractor: NSObject {
             throw ExtractionError.invalidURL
         }
         let webView = Self.makeWebView()
+        if let rules = await Self.extractionRules() {
+            webView.configuration.userContentController.add(rules)
+        }
         let host = hostView?()
         attach(webView, to: host)
         defer { webView.removeFromSuperview() }
 
         let loader = PageLoader(webView: webView)
-        try await loader.load(url, timeout: timeout)
+        try await loader.load(url, timeout: timeout, finishWhenReadable: true)
         await settle(webView)
         return try await extract(from: webView, sourceURL: webView.url ?? url, mode: mode)
+    }
+
+    /// Content rules for the off-screen extraction view: images, media and fonts are never looked at (the walker
+    /// reads `src` attributes, not pixels), and skipping them is most of a heavy page's load time. The
+    /// interactive page sheet doesn't use these rules, so the user sees the page normally.
+    private static var compiledRules: WKContentRuleList?
+    private static var didCompileRules = false
+
+    static func extractionRules() async -> WKContentRuleList? {
+        if didCompileRules { return compiledRules }
+        didCompileRules = true
+        let json = #"[{"trigger":{"url-filter":".*","resource-type":["image","media","font"]},"action":{"type":"block"}}]"#
+        compiledRules = try? await WKContentRuleListStore.default()
+            .compileContentRuleList(forIdentifier: "ReadAloud.extraction.v1", encodedContentRuleList: json)
+        return compiledRules
     }
 
     /// Extracts from raw HTML (a dropped `.html` file or shared page source).
@@ -165,12 +183,17 @@ final class PageLoader: NSObject, WKNavigationDelegate {
     private var continuation: CheckedContinuation<Void, Error>?
     private var httpStatus: Int?
     private var mimeType: String?
+    private var finishWhenReadable = false
+    private var readinessPoll: Task<Void, Never>?
 
     init(webView: WKWebView) {
         self.webView = webView
     }
 
-    func load(_ url: URL, timeout: TimeInterval) async throws {
+    /// - Parameter finishWhenReadable: return once the document is parsed and its text has stopped growing,
+    ///   instead of waiting for every subresource (ads, trackers, analytics) to finish loading.
+    func load(_ url: URL, timeout: TimeInterval, finishWhenReadable: Bool = false) async throws {
+        self.finishWhenReadable = finishWhenReadable
         try await run(timeout: timeout) {
             var request = URLRequest(url: url)
             request.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
@@ -213,6 +236,8 @@ final class PageLoader: NSObject, WKNavigationDelegate {
     }
 
     private func finish(_ error: Error?) {
+        readinessPoll?.cancel()
+        readinessPoll = nil
         guard let cont = continuation else { return }
         continuation = nil
         if let error { cont.resume(throwing: error) } else { cont.resume() }
@@ -231,6 +256,26 @@ final class PageLoader: NSObject, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         finish(nil)
+    }
+
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        guard finishWhenReadable, readinessPoll == nil else { return }
+        readinessPoll = Task { @MainActor [weak self, weak webView] in
+            var last = -1
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(300))
+                guard let webView, !Task.isCancelled else { return }
+                let probe = try? await webView.evaluateJavaScript(
+                    "document.readyState + '|' + (document.body ? document.body.innerText.length : 0)") as? String
+                let parts = probe?.split(separator: "|") ?? []
+                guard parts.count == 2, parts[0] != "loading", let length = Int(parts[1]) else { continue }
+                if length > 1_000, length == last {
+                    self?.finish(nil)
+                    return
+                }
+                last = length
+            }
+        }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {

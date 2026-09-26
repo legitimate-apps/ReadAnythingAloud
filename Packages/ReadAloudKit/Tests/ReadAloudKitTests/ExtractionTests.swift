@@ -73,7 +73,7 @@ import Testing
     @Test func collapsedMobileSectionsAreReadAndSiteSuffixIsDropped() async throws {
         let para = String(repeating: "Hummingbirds hover by rotating their wings in a figure-eight pattern at great speed. ", count: 5)
         let html = """
-        <html lang="en"><head><title>Hummingbird - Wikipedia</title></head><body><main><div id="content">
+        <html lang="en"><head><title>Hummingbird - Wikipedia</title><meta name="author" content="Contributors to Wikimedia projects"></head><body><main><div id="content">
         <h1>Hummingbird</h1>
         <section><p>\(para)</p></section>
         <h2>Description</h2>
@@ -86,6 +86,7 @@ import Testing
         let article = try await ArticleExtractor().extract(html: html, baseURL: URL(string: "https://en.wikipedia.org/wiki/Hummingbird")!)
         let text = article.blocks.map(\.plainText).joined(separator: "\n")
         #expect(article.title == "Hummingbird")
+        #expect(article.byline == nil)
         #expect(text.contains("Collapsed section text about plumage"))
         #expect(text.contains("migrate long distances"))
         #expect(!text.contains("Truly hidden furniture"))

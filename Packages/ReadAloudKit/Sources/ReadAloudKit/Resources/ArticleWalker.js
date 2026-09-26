@@ -332,6 +332,13 @@
     return t;
   }
 
+  // Wiki-style "Contributors to Wikimedia projects" and bare URLs aren't bylines worth showing.
+  function cleanByline(b) {
+    const t = (b || "").trim();
+    if (!t || /^contributors to /i.test(t) || /^https?:\/\//i.test(t) || t.length > 120) return null;
+    return t;
+  }
+
   function countWords(blocks) {
     let n = 0;
     for (const b of blocks) {
@@ -395,7 +402,7 @@
         ok: wordCount >= 60 || (wordCount >= 25 && !blocked),
         usedReadability: !!article,
         title: cleanTitle((article && article.title) || meta(["og:title", "twitter:title"]) || document.title || "", siteName),
-        byline: (article && article.byline) || meta(["author", "article:author", "parsely-author"]),
+        byline: cleanByline((article && article.byline) || meta(["author", "article:author", "parsely-author"])),
         siteName,
         excerpt: (article && article.excerpt) || meta(["description", "og:description"]),
         lang: (article && article.lang) || base.lang,
