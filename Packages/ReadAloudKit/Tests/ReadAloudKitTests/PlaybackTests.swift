@@ -116,7 +116,8 @@ struct FakeEngine: SpeechEngine {
         player.onStateChange = { if $0 == .finished { finished = true } }
         while clock.now - start < .seconds(6), !finished {
             try await Task.sleep(for: .milliseconds(40))
-            if let p = player.position, player.state == .playing {
+            // Read the audio clock and the wall clock back to back, so a starved main actor can't skew the pair.
+            if player.state == .playing, let p = player.livePosition() {
                 let wall = Double((clock.now - start).components.attoseconds) / 1e18 + Double((clock.now - start).components.seconds)
                 samples.append((wall, p))
             }

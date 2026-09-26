@@ -14,6 +14,8 @@ public struct Article: Codable, Identifiable, Sendable, Hashable {
     public var publishedTime: String?
     public var blocks: [Block]
     public var addedAt: Date
+    /// True when the page is paywalled and only its free teaser was extracted.
+    public var isPreview: Bool?
 
     public init(
         id: UUID = UUID(),
@@ -26,7 +28,8 @@ public struct Article: Codable, Identifiable, Sendable, Hashable {
         leadImageURL: URL? = nil,
         publishedTime: String? = nil,
         blocks: [Block],
-        addedAt: Date = Date()
+        addedAt: Date = Date(),
+        isPreview: Bool? = nil
     ) {
         self.id = id
         self.sourceURL = sourceURL
@@ -39,6 +42,7 @@ public struct Article: Codable, Identifiable, Sendable, Hashable {
         self.publishedTime = publishedTime
         self.blocks = blocks
         self.addedAt = addedAt
+        self.isPreview = isPreview
     }
 
     /// Number of words across speakable blocks — used for list metadata and time estimates.

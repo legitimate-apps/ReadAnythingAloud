@@ -287,6 +287,7 @@ struct ExtractionPayload: Decodable {
     var blocks: [RawBlock]
     var wordCount: Int
     var reason: String?
+    var preview: Bool?
     var error: String?
 
     func article(sourceURL: URL?) -> Article {
@@ -322,7 +323,8 @@ struct ExtractionPayload: Decodable {
             excerpt: clean(excerpt),
             leadImageURL: leadImage.flatMap(URL.init(string:)),
             publishedTime: clean(publishedTime),
-            blocks: Self.dropDuplicateLeadImage(converted, lead: leadImage)
+            blocks: Self.dropDuplicateLeadImage(converted, lead: leadImage),
+            isPreview: preview == true ? true : nil
         )
     }
 

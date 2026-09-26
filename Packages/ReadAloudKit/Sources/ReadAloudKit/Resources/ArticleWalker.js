@@ -329,6 +329,15 @@
     return signals.find(s => t.includes(s)) || null;
   }
 
+  // Publishers mark metered/paywalled articles for search engines with schema.org isAccessibleForFree=false.
+  function markedPaywalled() {
+    for (const script of Array.from(document.querySelectorAll('script[type="application/ld+json"]'))) {
+      if (/"isAccessibleForFree"\s*:\s*("?false"?|"False")/i.test(script.textContent || "")) return true;
+    }
+    const m = document.querySelector('meta[itemprop="isAccessibleForFree"]');
+    return !!(m && /false/i.test(m.getAttribute("content") || ""));
+  }
+
   window.__readAloudExtract = function (mode) {
     try {
       const base = {
@@ -373,6 +382,8 @@
         blocks,
         wordCount,
         reason: blocked,
+        // Only part of a paywalled article came through (a teaser before the subscribe prompt).
+        preview: wordCount < 450 && (markedPaywalled() || !!blocked),
       });
     } catch (e) {
       return JSON.stringify({ ok: false, error: String(e && e.stack || e), blocks: [], wordCount: 0 });

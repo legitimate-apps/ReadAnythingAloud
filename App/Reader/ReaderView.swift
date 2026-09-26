@@ -39,6 +39,8 @@ struct ReaderView: View {
                     Banner(systemImage: "arrow.down.circle", text: message, showsProgress: true)
                 } else if let error = session.errorMessage {
                     Banner(systemImage: "exclamationmark.triangle", text: error, showsProgress: false)
+                } else if session.article.isPreview == true, let url = session.article.sourceURL {
+                    PreviewNotice { model.webPage = AppModel.WebPageRequest(url: url) }
                 }
                 if !follow, prefs.autoScroll {
                     Button {
@@ -83,7 +85,7 @@ struct ReaderView: View {
                     Menu {
                         Button("Open Original", systemImage: "safari") { openURL(url) }
                         ShareLink(item: url) { Label("Share Link", systemImage: "square.and.arrow.up") }
-                        Button("Reload Article", systemImage: "arrow.clockwise") { model.add(url: url, mode: .article) }
+                        Button("Reload Article", systemImage: "arrow.clockwise") { model.add(url: url, refresh: true) }
                     } label: {
                         Label("More", systemImage: "ellipsis.circle")
                     }
@@ -96,6 +98,28 @@ struct ReaderView: View {
         }
         .onChange(of: session.jumpCounter) { follow = true }
         .readerKeyboardShortcuts(session: session, prefs: prefs)
+    }
+}
+
+/// Shown on paywalled articles where only the free teaser came through.
+private struct PreviewNotice: View {
+    var signIn: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "lock").foregroundStyle(Color.signature)
+            Text("Only the free preview of this article was available.")
+                .font(.footnote)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            Button("Sign In", action: signIn)
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.borderless)
+                .accessibilityHint("Opens the page so you can sign in, then reads the full article")
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityIdentifier("reader.previewNotice")
     }
 }
 

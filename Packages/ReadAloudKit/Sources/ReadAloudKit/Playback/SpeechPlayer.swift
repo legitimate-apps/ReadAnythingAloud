@@ -328,16 +328,13 @@ public final class SpeechPlayer {
         ticker = nil
     }
 
-    private func tick() {
-        guard let t = currentSampleTime() else { return }
-        lastSampleTime = t
-        if t >= scheduledEnd, state == .playing, let document, nextToSchedule < document.sentences.count {
-            state = .buffering
-            fillAhead()
-        }
-        guard let segment = segments.last(where: { $0.playerStart <= t }) else { return }
-        // Drop segments that finished long ago.
-        if segments.count > 4 { segments.removeFirst(segments.count - 4) }
+    /// Playhead derived from the audio clock right now (not the last tick); used by `tick` and by tests.
+    func livePosition() -> Position? {
+        currentSampleTime().flatMap(position(atSampleTime:))
+    }
+
+    private func position(atSampleTime t: AVAudioFramePosition) -> Position? {
+        guard let segment = segments.last(where: { $0.playerStart <= t }) else { return nil }
         let intoSegment = Int(t - segment.playerStart)
         let clipFrame = segment.clipStart + min(intoSegment, max(segment.clipFrames - 1, 0))
         let clipTime = Double(clipFrame) / format.sampleRate
@@ -350,7 +347,19 @@ public final class SpeechPlayer {
                 word = range.first
             }
         }
-        let newPosition = Position(sentence: segment.sentence, word: word, clipTime: clipTime)
+        return Position(sentence: segment.sentence, word: word, clipTime: clipTime)
+    }
+
+    private func tick() {
+        guard let t = currentSampleTime() else { return }
+        lastSampleTime = t
+        if t >= scheduledEnd, state == .playing, let document, nextToSchedule < document.sentences.count {
+            state = .buffering
+            fillAhead()
+        }
+        // Drop segments that finished long ago.
+        if segments.count > 4 { segments.removeFirst(segments.count - 4) }
+        guard let newPosition = position(atSampleTime: t) else { return }
         if newPosition.sentence != position?.sentence || newPosition.word != position?.word {
             position = newPosition
             onPosition?(newPosition)

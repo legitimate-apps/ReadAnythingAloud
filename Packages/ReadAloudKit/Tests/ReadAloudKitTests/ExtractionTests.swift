@@ -70,6 +70,14 @@ import Testing
         #expect(article.blocks.contains { $0.plainText.contains("takes years") })
     }
 
+    @Test func meteredTeaserIsMarkedAsPreview() async throws {
+        let article = try await ArticleExtractor().extract(url: try fixture("metered"))
+        #expect(article.isPreview == true)
+        #expect(article.blocks.contains { $0.plainText.contains("sticky services prices") })
+        let full = try await ArticleExtractor().extract(url: try fixture("article"))
+        #expect(full.isPreview == nil)
+    }
+
     @Test func paywalledPageFailsGracefully() async throws {
         do {
             _ = try await ArticleExtractor().extract(url: try fixture("paywall"))
