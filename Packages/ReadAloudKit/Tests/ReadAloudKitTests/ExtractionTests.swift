@@ -70,6 +70,39 @@ import Testing
         #expect(article.blocks.contains { $0.plainText.contains("takes years") })
     }
 
+    @Test func collapsedMobileSectionsAreReadAndSiteSuffixIsDropped() async throws {
+        let para = String(repeating: "Hummingbirds hover by rotating their wings in a figure-eight pattern at great speed. ", count: 5)
+        let html = """
+        <html lang="en"><head><title>Hummingbird - Wikipedia</title></head><body><main><div id="content">
+        <h1>Hummingbird</h1>
+        <section><p>\(para)</p></section>
+        <h2>Description</h2>
+        <section hidden="until-found"><p>Collapsed section text about plumage. \(para)</p></section>
+        <h2>Migration</h2>
+        <section hidden="until-found"><p>Some species migrate long distances every year. \(para)</p></section>
+        <div hidden><p>Truly hidden furniture that should never be spoken aloud.</p></div>
+        </div></main></body></html>
+        """
+        let article = try await ArticleExtractor().extract(html: html, baseURL: URL(string: "https://en.wikipedia.org/wiki/Hummingbird")!)
+        let text = article.blocks.map(\.plainText).joined(separator: "\n")
+        #expect(article.title == "Hummingbird")
+        #expect(text.contains("Collapsed section text about plumage"))
+        #expect(text.contains("migrate long distances"))
+        #expect(!text.contains("Truly hidden furniture"))
+    }
+
+    @Test func titleKeepsColonsAndUnrelatedSegments() async throws {
+        let body = String(repeating: "A long paragraph about processors and their design trade-offs in practice. ", count: 6)
+        for (title, expected) in [("Apple: The New Chips", "Apple: The New Chips"),
+                                  ("Rust vs. Go - A Comparison", "Rust vs. Go - A Comparison"),
+                                  ("The Verge | Chips Explained", "Chips Explained")] {
+            let html = "<html><head><title>\(title)</title><meta property=\"og:site_name\" content=\"The Verge\"></head>"
+                + "<body><article><p>\(body)</p></article></body></html>"
+            let article = try await ArticleExtractor().extract(html: html, baseURL: URL(string: "https://www.example.com/a")!)
+            #expect(article.title == expected)
+        }
+    }
+
     @Test func meteredTeaserIsMarkedAsPreview() async throws {
         let article = try await ArticleExtractor().extract(url: try fixture("metered"))
         #expect(article.isPreview == true)

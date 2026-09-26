@@ -25,9 +25,12 @@ targets:
     supportedDestinations: [iOS, macOS]
     sources:
       - path: App
+      - path: Shared
     dependencies:
       - package: ReadAloudKit
         product: ReadAloudKit
+      - target: ShareExtension
+        destinationFilters: [iOS]
     entitlements:
       path: App/Support/ReadAnythingAloud.entitlements
       properties:
@@ -77,3 +80,36 @@ targets:
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
         ENABLE_HARDENED_RUNTIME: YES
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": App/Support/ReadAnythingAloud-iOS.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": App/Support/ReadAnythingAloud-iOS.entitlements
+  ShareExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ShareExtension
+      - path: Shared
+    entitlements:
+      path: ShareExtension/ShareExtension.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.legitimateapps.ReadAnythingAloud]
+    info:
+      path: ShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: ReadAnythingAloud
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionJavaScriptPreprocessingFile: Preprocess
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsWebPageWithMaxCount: 1
+              NSExtensionActivationSupportsText: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.legitimateapps.ReadAnythingAloud.Share
+        PRODUCT_NAME: ReadAnythingAloudShare
+        TARGETED_DEVICE_FAMILY: "1,2"
+        APPLICATION_EXTENSION_API_ONLY: YES

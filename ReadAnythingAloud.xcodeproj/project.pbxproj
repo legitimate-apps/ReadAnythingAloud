@@ -7,11 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04E4897A730478A71F16EDC1 /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769395E91D90FB5BD3F74797 /* ShareInbox.swift */; };
 		25EB3B6C8647F448B8FEA7ED /* ArticleTextBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7244C8E9C914F657269B0706 /* ArticleTextBuilder.swift */; };
 		32CD651BAF5915393E830B0A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B48E5E94CEA79F2A0DC7C7A2 /* Assets.xcassets */; };
+		5BDC2DD96DFD58563E5186D4 /* Preprocess.js in Resources */ = {isa = PBXBuildFile; fileRef = 116FBF27766E7B331ACB4573 /* Preprocess.js */; };
+		5FA7BEC55257C7838563BC00 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D71F4C92929F0419E969B9ED /* ShareViewController.swift */; };
 		63374BB97063C5D6F09A9535 /* ReadAnythingAloudApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC851DC5071A8C31F167266 /* ReadAnythingAloudApp.swift */; };
 		77F7C4C6762B4847894CEA28 /* VoicePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86279EDF5777EA7ABF239D62 /* VoicePicker.swift */; };
+		8B70411C08F965D662DE7C52 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 111C8F62F5D9AD1EF814C838 /* ShareExtension.appex */; platformFilters = (ios, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8E745E0205EC631C1C477F37 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1071ED606F4EDA4EF8DFA94 /* LibraryView.swift */; };
+		B269A36FE96D9C540F6DECF3 /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769395E91D90FB5BD3F74797 /* ShareInbox.swift */; };
 		B64A0165349A86E39794BA6B /* ReaderStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C061655B8723229447CBEA1 /* ReaderStyle.swift */; };
 		C0509C78BF56E88D0BBEB275 /* ReadAloudKit in Frameworks */ = {isa = PBXBuildFile; productRef = 8FA0FFCF2B2DB0A8E0022993 /* ReadAloudKit */; };
 		C9EB8C0DBA84197182DCCD97 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BF160F5C2065C4EF6F93F /* ReaderView.swift */; };
@@ -22,23 +27,54 @@
 		FFB95C0BE6F648CA05B5EEA0 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 622BF237C0F8B6807F21B776 /* AppModel.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		F84B3E90CC4A72B2658E0A64 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E7D35776A69C9BA3E73962D1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 704ED15401F51B6732A73C1E;
+			remoteInfo = ShareExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A07AD8A5B221EC8A589FBE09 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				8B70411C08F965D662DE7C52 /* ShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		111C8F62F5D9AD1EF814C838 /* ShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		116FBF27766E7B331ACB4573 /* Preprocess.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Preprocess.js; sourceTree = "<group>"; };
 		15814C056803301F5198BD0D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		2C061655B8723229447CBEA1 /* ReaderStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderStyle.swift; sourceTree = "<group>"; };
 		307065C35D6831A6533FF8EF /* ReadAnythingAloud.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ReadAnythingAloud.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E4345F6A403DB61F6216DCB /* ReadAnythingAloud-iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ReadAnythingAloud-iOS.entitlements"; sourceTree = "<group>"; };
 		461E40DC97474FD934CF471D /* ReadAloudKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ReadAloudKit; path = Packages/ReadAloudKit; sourceTree = SOURCE_ROOT; };
 		622BF237C0F8B6807F21B776 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		7244C8E9C914F657269B0706 /* ArticleTextBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleTextBuilder.swift; sourceTree = "<group>"; };
+		769395E91D90FB5BD3F74797 /* ShareInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInbox.swift; sourceTree = "<group>"; };
 		86279EDF5777EA7ABF239D62 /* VoicePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePicker.swift; sourceTree = "<group>"; };
 		9FAD23D6BDD2F24B5BC7DD6D /* ReadAnythingAloud.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ReadAnythingAloud.entitlements; sourceTree = "<group>"; };
 		A1071ED606F4EDA4EF8DFA94 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		A2C624CBE10699FEB2FE5A49 /* ReaderTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderTextView.swift; sourceTree = "<group>"; };
 		B48E5E94CEA79F2A0DC7C7A2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BA3301D6CB5ABB76772B2FA9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		BE08D623FE7B4E6171A70BD2 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
 		C76BF160F5C2065C4EF6F93F /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
 		CFC851DC5071A8C31F167266 /* ReadAnythingAloudApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadAnythingAloudApp.swift; sourceTree = "<group>"; };
 		D190EAA6AAC6AD0CEB884E9C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D5E92962942F5EA966CA2D51 /* RemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImage.swift; sourceTree = "<group>"; };
 		D66EC591CE01EC30CFABD6F6 /* AddArticleViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddArticleViews.swift; sourceTree = "<group>"; };
+		D71F4C92929F0419E969B9ED /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +94,7 @@
 			children = (
 				622BF237C0F8B6807F21B776 /* AppModel.swift */,
 				D190EAA6AAC6AD0CEB884E9C /* Info.plist */,
+				3E4345F6A403DB61F6216DCB /* ReadAnythingAloud-iOS.entitlements */,
 				9FAD23D6BDD2F24B5BC7DD6D /* ReadAnythingAloud.entitlements */,
 				D5E92962942F5EA966CA2D51 /* RemoteImage.swift */,
 			);
@@ -115,6 +152,7 @@
 			isa = PBXGroup;
 			children = (
 				307065C35D6831A6533FF8EF /* ReadAnythingAloud.app */,
+				111C8F62F5D9AD1EF814C838 /* ShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -124,8 +162,18 @@
 			children = (
 				72E025A381BD27985387828A /* App */,
 				6AA77AD63F321DD4CF0A8AEA /* Packages */,
+				CD2F71DE9EEDCAAA8CEE60FF /* Shared */,
+				EF8B65E21CE98D8B367023BF /* ShareExtension */,
 				93FCE636CD078C3E099B9934 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		CD2F71DE9EEDCAAA8CEE60FF /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				769395E91D90FB5BD3F74797 /* ShareInbox.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		E8921FBAC69A8ED928CE1B88 /* Reader */ = {
@@ -139,9 +187,38 @@
 			path = Reader;
 			sourceTree = "<group>";
 		};
+		EF8B65E21CE98D8B367023BF /* ShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				BA3301D6CB5ABB76772B2FA9 /* Info.plist */,
+				116FBF27766E7B331ACB4573 /* Preprocess.js */,
+				BE08D623FE7B4E6171A70BD2 /* ShareExtension.entitlements */,
+				D71F4C92929F0419E969B9ED /* ShareViewController.swift */,
+			);
+			path = ShareExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		704ED15401F51B6732A73C1E /* ShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EEF79F72019789C1DD13F3D0 /* Build configuration list for PBXNativeTarget "ShareExtension" */;
+			buildPhases = (
+				03847F1D288107F66F307362 /* Sources */,
+				44424D5842237FA8165EFFF4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShareExtension;
+			packageProductDependencies = (
+			);
+			productName = ShareExtension;
+			productReference = 111C8F62F5D9AD1EF814C838 /* ShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		A232374FB064888EBCF74586 /* ReadAnythingAloud */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8A898D2ED4FE08322B471858 /* Build configuration list for PBXNativeTarget "ReadAnythingAloud" */;
@@ -149,10 +226,12 @@
 				E60419377B3CEE5C78D296E4 /* Sources */,
 				F4D37469DD09AA78466DE56E /* Resources */,
 				6819BDF19F4141B202E22681 /* Frameworks */,
+				A07AD8A5B221EC8A589FBE09 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C6FAB9AF1594E710BF95D829 /* PBXTargetDependency */,
 			);
 			name = ReadAnythingAloud;
 			packageProductDependencies = (
@@ -171,6 +250,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					704ED15401F51B6732A73C1E = {
+						DevelopmentTeam = 3LTL47SJ8C;
+						ProvisioningStyle = Automatic;
+					};
 					A232374FB064888EBCF74586 = {
 						DevelopmentTeam = 3LTL47SJ8C;
 						ProvisioningStyle = Automatic;
@@ -195,11 +278,20 @@
 			projectRoot = "";
 			targets = (
 				A232374FB064888EBCF74586 /* ReadAnythingAloud */,
+				704ED15401F51B6732A73C1E /* ShareExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		44424D5842237FA8165EFFF4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5BDC2DD96DFD58563E5186D4 /* Preprocess.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F4D37469DD09AA78466DE56E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -211,6 +303,15 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		03847F1D288107F66F307362 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				04E4897A730478A71F16EDC1 /* ShareInbox.swift in Sources */,
+				5FA7BEC55257C7838563BC00 /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E60419377B3CEE5C78D296E4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -225,11 +326,23 @@
 				C9EB8C0DBA84197182DCCD97 /* ReaderView.swift in Sources */,
 				E54DA927335D60F4832941F8 /* RemoteImage.swift in Sources */,
 				E4E0CA5CFEFFF25837ABF473 /* SettingsView.swift in Sources */,
+				B269A36FE96D9C540F6DECF3 /* ShareInbox.swift in Sources */,
 				77F7C4C6762B4847894CEA28 /* VoicePicker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C6FAB9AF1594E710BF95D829 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilters = (
+				ios,
+			);
+			target = 704ED15401F51B6732A73C1E /* ShareExtension */;
+			targetProxy = F84B3E90CC4A72B2658E0A64 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		317DD89D092B1BDFAAE1D434 /* Release */ = {
@@ -288,7 +401,6 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -302,6 +414,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/Support/ReadAnythingAloud.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]" = "App/Support/ReadAnythingAloud-iOS.entitlements";
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = "App/Support/ReadAnythingAloud-iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = App/Support/Info.plist;
@@ -320,6 +434,24 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
+		};
+		A8B2F666A3ED483B12DDECDB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.legitimateapps.ReadAnythingAloud.Share;
+				PRODUCT_NAME = ReadAnythingAloudShare;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
 		};
 		AA3BB9E0743C019D89B82F1B /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -384,7 +516,6 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -398,6 +529,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/Support/ReadAnythingAloud.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]" = "App/Support/ReadAnythingAloud-iOS.entitlements";
+				"CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]" = "App/Support/ReadAnythingAloud-iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = App/Support/Info.plist;
@@ -417,6 +550,24 @@
 			};
 			name = Release;
 		};
+		FF430BDD6B5774C1A6AADE00 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.legitimateapps.ReadAnythingAloud.Share;
+				PRODUCT_NAME = ReadAnythingAloudShare;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -434,6 +585,15 @@
 			buildConfigurations = (
 				6C48CC6E71E54B4E32F93D8C /* Debug */,
 				CCC20A03BAC753265C714637 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EEF79F72019789C1DD13F3D0 /* Build configuration list for PBXNativeTarget "ShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF430BDD6B5774C1A6AADE00 /* Debug */,
+				A8B2F666A3ED483B12DDECDB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

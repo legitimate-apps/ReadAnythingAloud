@@ -91,7 +91,9 @@
   }
 
   function isHidden(el) {
-    if (el.hidden || el.getAttribute("aria-hidden") === "true") return true;
+    // `hidden="until-found"` is collapsed-but-findable content (mobile Wikipedia's sections), not furniture.
+    if (el.hasAttribute("hidden") && el.getAttribute("hidden") !== "until-found") return true;
+    if (el.getAttribute("aria-hidden") === "true") return true;
     const style = el.getAttribute("style") || "";
     return /display\s*:\s*none|visibility\s*:\s*hidden/i.test(style);
   }
@@ -267,6 +269,9 @@
     "[data-testid=newsletter]", ".ad", ".advertisement", "[aria-label=advertisement]"];
 
   function removeBoilerplate(doc) {
+    // Readability discards hidden nodes; collapsed sections (hidden="until-found", closed <details>) are real text.
+    doc.querySelectorAll('[hidden="until-found"]').forEach(el => el.removeAttribute("hidden"));
+    doc.querySelectorAll("details:not([open])").forEach(el => el.setAttribute("open", ""));
     for (const sel of BOILERPLATE) {
       try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch (e) { /* unsupported selector */ }
     }
@@ -309,6 +314,22 @@
       if (c && c.trim()) return c.trim();
     }
     return null;
+  }
+
+  // "Hummingbird - Wikipedia" → "Hummingbird": drop a trailing (or leading) segment that just names the site.
+  function cleanTitle(title, siteName) {
+    const t = (title || "").trim();
+    const norm = x => (x || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+    const host = (location.hostname || "").replace(/^www\./, "");
+    const labels = host.split(".");
+    const names = [norm(siteName), norm(host), norm(labels.length >= 2 ? labels[labels.length - 2] : host)].filter(Boolean);
+    const parts = t.split(/\s+[-–—|·•]\s+/);
+    if (parts.length < 2) return t;
+    const last = norm(parts[parts.length - 1]), first = norm(parts[0]);
+    const isSite = x => names.some(n => x === n || (x.length >= 4 && n.startsWith(x)));
+    if (isSite(last)) return parts.slice(0, -1).join(" - ").trim() || t;
+    if (isSite(first)) return parts.slice(1).join(" - ").trim() || t;
+    return t;
   }
 
   function countWords(blocks) {
@@ -369,12 +390,13 @@
       const readabilitySite = article && article.siteName && !CORPORATE.test(article.siteName) ? article.siteName : null;
       const wordCount = countWords(blocks);
       const blocked = looksBlocked();
+      const siteName = meta(["og:site_name", "application-name"]) || readabilitySite;
       return JSON.stringify({
         ok: wordCount >= 60 || (wordCount >= 25 && !blocked),
         usedReadability: !!article,
-        title: (article && article.title) || meta(["og:title", "twitter:title"]) || document.title || "",
+        title: cleanTitle((article && article.title) || meta(["og:title", "twitter:title"]) || document.title || "", siteName),
         byline: (article && article.byline) || meta(["author", "article:author", "parsely-author"]),
-        siteName: meta(["og:site_name", "application-name"]) || readabilitySite,
+        siteName,
         excerpt: (article && article.excerpt) || meta(["description", "og:description"]),
         lang: (article && article.lang) || base.lang,
         leadImage: base.leadImage,

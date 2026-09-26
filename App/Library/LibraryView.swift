@@ -6,6 +6,7 @@ struct RootView: View {
     @Environment(AppModel.self) private var model
     @State private var columnVisibility = NavigationSplitViewVisibility.automatic
     @State private var isDropTargeted = false
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         @Bindable var model = model
@@ -51,6 +52,11 @@ struct RootView: View {
         }
         #endif
         .onOpenURL { model.handleOpenURL($0) }
+        #if os(iOS)
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            if phase == .active { model.importSharedPages() }
+        }
+        #endif
     }
 }
 

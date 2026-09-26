@@ -188,6 +188,36 @@ final class AppModel {
         }
     }
 
+    #if os(iOS)
+    /// Imports pages shared from other apps through the Share extension.
+    func importSharedPages() {
+        let pages = ShareInbox.drain()
+        guard !pages.isEmpty else { return }
+        Task {
+            for page in pages { await importShared(page) }
+        }
+    }
+
+    private func importShared(_ page: SharedPage) async {
+        if let url = page.url, let html = page.html {
+            // Safari's rendered page first: it carries whatever the user is signed in to. A teaser-only or unreadable
+            // capture falls back to fetching the URL.
+            adding = PendingAdd(url: url, label: url.host(percentEncoded: false) ?? url.absoluteString)
+            let article = try? await ArticleExtractor.shared.extract(html: html, baseURL: url)
+            adding = nil
+            if let article, article.isPreview != true {
+                store(article)
+                return
+            }
+        }
+        if let url = page.url {
+            add(url: url)
+        } else if let text = page.text {
+            add(input: text)
+        }
+    }
+    #endif
+
     /// Saves an extracted article and shows it. Re-adding a page replaces the stored copy (keeping its place in
     /// the library and the listening progress), so an open reader is reopened on the fresh text.
     private func store(_ article: Article) {
