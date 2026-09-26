@@ -16,17 +16,19 @@ struct SettingsView: View {
         Form {
             Section("Default voice") {
                 LabeledContent("Voice", value: voiceName(settings.preferredVoice))
-                switch settings.kokoroState {
-                case .ready:
-                    Label("Natural voices downloaded", systemImage: "checkmark.circle").foregroundStyle(.secondary)
-                case .preparing:
-                    HStack { ProgressView().controlSize(.small); Text("Downloading natural voices…") }
-                case .notDownloaded:
-                    Button("Download natural voices (about 330 MB)") { Task { await settings.prepareKokoro() } }
-                case .failed(let message):
-                    VStack(alignment: .leading) {
-                        Text(message).font(.footnote).foregroundStyle(.red)
-                        Button("Try Again") { Task { await settings.prepareKokoro() } }
+                if VoiceSettings.isKokoroAvailable {
+                    switch settings.kokoroState {
+                    case .ready:
+                        Label("Natural voices downloaded", systemImage: "checkmark.circle").foregroundStyle(.secondary)
+                    case .preparing:
+                        HStack { ProgressView().controlSize(.small); Text("Downloading natural voices…") }
+                    case .notDownloaded:
+                        Button("Download natural voices (about 150 MB)") { Task { await settings.prepareKokoro() } }
+                    case .failed(let message):
+                        VStack(alignment: .leading) {
+                            Text(message).font(.footnote).foregroundStyle(.red)
+                            Button("Try Again") { Task { await settings.prepareKokoro() } }
+                        }
                     }
                 }
                 Text("Pick a voice from the waveform button while reading. Articles that aren't in English use the best Apple voice for their language.")

@@ -269,7 +269,7 @@ public final class ReadingSession {
         if voice.engine == .kokoro, settings.kokoroState != .ready {
             preparingMessage = KokoroEngine.isDownloaded
                 ? "Loading the natural voice…"
-                : "Downloading the natural voice (about 330 MB, first time only)…"
+                : "Downloading the natural voice (about 150 MB, first time only)…"
             state = .buffering
             voiceTask = Task {
                 await settings.prepareKokoro()

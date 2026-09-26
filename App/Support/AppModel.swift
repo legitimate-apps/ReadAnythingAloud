@@ -63,7 +63,7 @@ final class AppModel {
     /// Loading Kokoro takes ~25 s per launch (Core ML specializes the models for the Neural Engine), so start it
     /// in the background as soon as the app opens rather than when the listener presses play.
     private func warmUpVoice() {
-        guard settings.preferredVoice.engine == .kokoro, KokoroEngine.isDownloaded else { return }
+        guard VoiceSettings.isKokoroAvailable, settings.preferredVoice.engine == .kokoro, KokoroEngine.isDownloaded else { return }
         let settings = settings
         Task(priority: .utility) { await settings.prepareKokoro() }
     }
@@ -203,10 +203,16 @@ final class AppModel {
 
     func handleOpenURL(_ url: URL) {
         if url.scheme == "readanythingaloud" {
-            // readanythingaloud://add?url=https://…
             let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-            if let target = components?.queryItems?.first(where: { $0.name == "url" })?.value.flatMap(URL.init(string:)) {
-                add(url: target)
+            switch url.host(percentEncoded: false) {
+            case "play": session?.play()          // readanythingaloud://play (Shortcuts, automation)
+            case "pause": session?.pause()
+            case "toggle": session?.togglePlayPause()
+            default:
+                // readanythingaloud://add?url=https://…
+                if let target = components?.queryItems?.first(where: { $0.name == "url" })?.value.flatMap(URL.init(string:)) {
+                    add(url: target)
+                }
             }
             return
         }

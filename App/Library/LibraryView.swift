@@ -121,7 +121,9 @@ struct LibraryList: View {
             }
         }
         #endif
+        #if os(macOS)
         .onDeleteCommand { if let id = model.selection { model.delete([id]) } }
+        #endif
     }
 
     private var filtered: [ArticleSummary] {

@@ -20,7 +20,7 @@ struct VoicePicker: View {
     var body: some View {
         NavigationStack {
             List {
-                if isEnglish {
+                if isEnglish, VoiceSettings.isKokoroAvailable {
                     Section {
                         kokoroStatus
                         ForEach(KokoroEngine.catalog, id: \.id) { voice in
@@ -43,7 +43,11 @@ struct VoicePicker: View {
                 } header: {
                     Text("Apple voices")
                 } footer: {
+                    #if os(macOS)
                     Text("Add higher-quality Enhanced and Premium voices in System Settings › Accessibility › Spoken Content › System Voice.")
+                    #else
+                    Text("For the most natural sound, download an Enhanced or Premium voice in Settings › Accessibility › Spoken Content › Voices.")
+                    #endif
                 }
                 Section {
                     if settings.hasElevenLabsKey {
@@ -96,12 +100,12 @@ struct VoicePicker: View {
         case .ready:
             EmptyView()
         case .preparing:
-            HStack { ProgressView(); Text("Downloading natural voices (about 330 MB)…") }
+            HStack { ProgressView(); Text("Downloading natural voices (about 150 MB)…") }
         case .notDownloaded:
             Button {
                 Task { await settings.prepareKokoro() }
             } label: {
-                Label("Download natural voices (about 330 MB)", systemImage: "arrow.down.circle")
+                Label("Download natural voices (about 150 MB)", systemImage: "arrow.down.circle")
             }
         case .failed(let message):
             VStack(alignment: .leading) {

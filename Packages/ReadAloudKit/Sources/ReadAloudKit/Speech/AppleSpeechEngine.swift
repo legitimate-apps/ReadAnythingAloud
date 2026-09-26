@@ -96,14 +96,16 @@ public final class AppleSpeechEngine: SpeechEngine, @unchecked Sendable {
 
     // MARK: - Rendering
 
-    private final class Renderer: NSObject, AVSpeechSynthesizerDelegate, @unchecked Sendable {
+    /// One sentence being rendered. Callbacks for it (buffers, range marks) are routed here by identity, so a
+    /// late callback from an earlier, cancelled utterance can never leak into the next one.
+    private final class Job: @unchecked Sendable {
         struct Output {
             var samples: [Float]
             var sampleRate: Double
             var marks: [(NSRange, Int)]
         }
 
-        private let synthesizer = AVSpeechSynthesizer()
+        let utterance: AVSpeechUtterance
         private let lock = NSLock()
         private var samples: [Float] = []
         private var sampleRate: Double = 22_050
@@ -111,59 +113,40 @@ public final class AppleSpeechEngine: SpeechEngine, @unchecked Sendable {
         private var continuation: CheckedContinuation<Output, Error>?
         private var finished = false
 
-        static func render(text: String, voice: AVSpeechSynthesisVoice, pace: Float) async throws -> Output {
-            let renderer = Renderer()
-            return try await renderer.run(text: text, voice: voice, pace: pace)
+        init(utterance: AVSpeechUtterance) {
+            self.utterance = utterance
         }
 
-        private func run(text: String, voice: AVSpeechSynthesisVoice, pace: Float) async throws -> Output {
-            let utterance = AVSpeechUtterance(string: text)
-            utterance.voice = voice
-            utterance.rate = min(AVSpeechUtteranceMaximumSpeechRate,
-                                 max(AVSpeechUtteranceMinimumSpeechRate, AVSpeechUtteranceDefaultSpeechRate * pace))
-            utterance.prefersAssistiveTechnologySettings = false
-            synthesizer.delegate = self
-            return try await withTaskCancellationHandler {
-                try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Output, Error>) in
-                    lock.withLock { continuation = cont }
-                    synthesizer.write(utterance) { [weak self] buffer in
-                        self?.receive(buffer)
-                    }
-                    // Safety net: a voice that never delivers its terminating empty buffer.
-                    DispatchQueue.global().asyncAfter(deadline: .now() + 60) { [weak self] in
-                        self?.finish(error: SpeechEngineError.underlying("Apple voice timed out"))
-                    }
-                }
-            } onCancel: {
-                self.synthesizer.stopSpeaking(at: .immediate)
-                self.finish(error: CancellationError())
+        func attach(_ cont: CheckedContinuation<Output, Error>) {
+            let alreadyFinished = lock.withLock {
+                continuation = cont
+                return finished
             }
+            // Cancelled before the continuation existed.
+            if alreadyFinished { lock.withLock { continuation = nil }; cont.resume(throwing: CancellationError()) }
         }
 
-        private func receive(_ buffer: AVAudioBuffer) {
+        func receive(_ buffer: AVAudioBuffer) {
             guard let pcm = buffer as? AVAudioPCMBuffer else { return }
             if pcm.frameLength == 0 {
                 finish(error: nil)
                 return
             }
-            let chunk = Self.floatSamples(pcm)
+            let chunk = Renderer.floatSamples(pcm)
             lock.withLock {
+                guard !finished else { return }
                 sampleRate = pcm.format.sampleRate
                 samples.append(contentsOf: chunk)
             }
         }
 
-        func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange,
-                               utterance: AVSpeechUtterance) {
-            lock.withLock { marks.append((characterRange, samples.count)) }
+        var isFinished: Bool { lock.withLock { finished } }
+
+        func mark(_ range: NSRange) {
+            lock.withLock { if !finished { marks.append((range, samples.count)) } }
         }
 
-        func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-            // `write` also reports completion with an empty buffer; give it a moment to arrive first.
-            DispatchQueue.global().asyncAfter(deadline: .now() + 0.25) { [weak self] in self?.finish(error: nil) }
-        }
-
-        private func finish(error: Error?) {
+        func finish(error: Error?) {
             let (cont, output): (CheckedContinuation<Output, Error>?, Output) = lock.withLock {
                 guard !finished else { return (nil, Output(samples: [], sampleRate: 0, marks: [])) }
                 finished = true
@@ -173,8 +156,84 @@ public final class AppleSpeechEngine: SpeechEngine, @unchecked Sendable {
             guard let cont else { return }
             if let error { cont.resume(throwing: error) } else { cont.resume(returning: output) }
         }
+    }
 
-        static func floatSamples(_ pcm: AVAudioPCMBuffer) -> [Float] {
+    /// Owns the app's single `AVSpeechSynthesizer`. It is created and driven on the main thread and never
+    /// released: iOS's TextToSpeech framework keeps dispatching work to the main queue after a `write` completes,
+    /// and freeing a per-sentence synthesizer under it crashes (EXC_BAD_ACCESS in `objc_retain`).
+    @MainActor
+    private final class Renderer: NSObject, AVSpeechSynthesizerDelegate {
+        static let shared = Renderer()
+
+        private let synthesizer = AVSpeechSynthesizer()
+        /// Jobs by utterance, read from delegate callbacks on whatever thread the framework uses.
+        nonisolated(unsafe) private var jobs: [ObjectIdentifier: Job] = [:]
+        nonisolated private let lock = NSLock()
+
+        override init() {
+            super.init()
+            synthesizer.delegate = self
+        }
+
+        nonisolated static func render(text: String, voice: AVSpeechSynthesisVoice, pace: Float) async throws -> Job.Output {
+            let utterance = AVSpeechUtterance(string: text)
+            utterance.voice = voice
+            utterance.rate = min(AVSpeechUtteranceMaximumSpeechRate,
+                                 max(AVSpeechUtteranceMinimumSpeechRate, AVSpeechUtteranceDefaultSpeechRate * pace))
+            utterance.prefersAssistiveTechnologySettings = false
+            let job = Job(utterance: utterance)
+            let sendableUtterance = SendableBox(utterance)
+            return try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Job.Output, Error>) in
+                    job.attach(cont)
+                    Task { @MainActor in
+                        Renderer.shared.start(job, utterance: sendableUtterance.value)
+                    }
+                    // Safety net: a voice that never delivers its terminating empty buffer.
+                    DispatchQueue.global().asyncAfter(deadline: .now() + 60) {
+                        job.finish(error: SpeechEngineError.underlying("Apple voice timed out"))
+                    }
+                }
+            } onCancel: {
+                job.finish(error: CancellationError())
+                Task { @MainActor in Renderer.shared.cancel(job) }
+            }
+        }
+
+        private func start(_ job: Job, utterance: AVSpeechUtterance) {
+            guard !job.isFinished else { return } // cancelled while waiting for the main actor
+            lock.withLock { jobs[ObjectIdentifier(utterance)] = job }
+            synthesizer.write(utterance) { buffer in
+                job.receive(buffer)
+            }
+        }
+
+        private func cancel(_ job: Job) {
+            let isQueued = lock.withLock { jobs.removeValue(forKey: ObjectIdentifier(job.utterance)) != nil }
+            if isQueued, synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
+        }
+
+        private nonisolated func job(for utterance: AVSpeechUtterance) -> Job? {
+            lock.withLock { jobs[ObjectIdentifier(utterance)] }
+        }
+
+        nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange,
+                                           utterance: AVSpeechUtterance) {
+            job(for: utterance)?.mark(characterRange)
+        }
+
+        nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+            let job = lock.withLock { jobs.removeValue(forKey: ObjectIdentifier(utterance)) }
+            // `write` also reports completion with an empty buffer; give it a moment to arrive first.
+            if let job { DispatchQueue.global().asyncAfter(deadline: .now() + 0.25) { job.finish(error: nil) } }
+        }
+
+        nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+            let job = lock.withLock { jobs.removeValue(forKey: ObjectIdentifier(utterance)) }
+            job?.finish(error: CancellationError())
+        }
+
+        nonisolated static func floatSamples(_ pcm: AVAudioPCMBuffer) -> [Float] {
             let n = Int(pcm.frameLength)
             if let data = pcm.floatChannelData {
                 return Array(UnsafeBufferPointer(start: data[0], count: n))
@@ -188,6 +247,11 @@ public final class AppleSpeechEngine: SpeechEngine, @unchecked Sendable {
             return []
         }
     }
+}
+
+private struct SendableBox<T>: @unchecked Sendable {
+    let value: T
+    init(_ value: T) { self.value = value }
 }
 
 /// A FIFO async mutex.
