@@ -260,23 +260,21 @@ final class AppModel {
     }
 
     func handleDrop(_ providers: [NSItemProvider]) -> Bool {
-        for provider in providers {
-            if provider.canLoadObject(ofClass: URL.self) {
-                _ = provider.loadObject(ofClass: URL.self) { url, _ in
-                    guard let url else { return }
-                    Task { @MainActor in url.isFileURL ? self.addFile(url) : self.add(url: url) }
-                }
-                return true
-            }
-            if provider.canLoadObject(ofClass: String.self) {
-                _ = provider.loadObject(ofClass: String.self) { text, _ in
-                    guard let text else { return }
-                    Task { @MainActor in self.add(input: text) }
-                }
-                return true
+        guard !providers.isEmpty else { return false }
+        Task {
+            switch await DropResolver.resolve(providers) {
+            case .webURL(let url): add(url: url)
+            case .fileURL(let url): addFile(url)
+            case .text(let text): add(input: text)
+            case nil: failure = AddFailure(url: nil, error: DropError.nothingUsable)
             }
         }
-        return false
+        return true
+    }
+
+    enum DropError: LocalizedError {
+        case nothingUsable
+        var errorDescription: String? { "That drop didn't include a link, a web page or text." }
     }
 
     static func webURL(from text: String) -> URL? {

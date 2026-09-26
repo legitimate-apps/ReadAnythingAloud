@@ -21,7 +21,7 @@ struct RootView: View {
                 EmptyReaderView()
             }
         }
-        .onDrop(of: [.url, .fileURL, .plainText, .text], isTargeted: $isDropTargeted) { providers in
+        .onDrop(of: [.url, .fileURL, .html, .plainText, .text], isTargeted: $isDropTargeted) { providers in
             model.handleDrop(providers)
         }
         .overlay {
