@@ -29,14 +29,15 @@ Updated: 2026-09-26
   SKU readanythingaloud. Internal TestFlight group "Internal" (fb3acfa1-…), all builds, 2 testers.
 - Builds 1 and 2 were rejected in processing: ITMS-90208, Xcode embedded an empty stub
   onnxruntime.framework (ORT is a static xcframework already linked into the binary). A post-build phase
-  now deletes the stub. Build 3 carries the fix; upload status is below in the log.
+  now deletes the stub. **On TestFlight (Internal group), 2026-09-26: iOS build 3 VALID / IN_BETA_TESTING,
+  macOS build 4 VALID.** (Mac needed LSSupportsOpeningDocumentsInPlace = YES; NO fails the build.)
 - Upload: `Scripts/release.sh` — archive (Release, generic platform) → export with
   Scripts/export-*.plist (manual signing) → `xcrun altool --upload-app` with the
   Legitimate ASC key (`~/.appstoreconnect/config-legitimate.sh`). Failed processing shows only in the
   ASC web UI (TestFlight → Build Uploads), not in /v1/builds.
 
 ## Next action
-1. Confirm build 3 processes (iOS + macOS), install from TestFlight on the iPad, re-check Kokoro.
+1. Install iOS build 3 from TestFlight on the iPad; re-check Kokoro in the release build (stub removed).
 2. iPad memory: footprint growth over a long session with the current build.
 3. ElevenLabs tiny test with the vault key.
 4. Mac: consider limiting onnxruntime to iOS to trim the Mac bundle.
