@@ -107,8 +107,43 @@ public enum DocumentBuilder {
            simplify(first.plainText) == simplify(title) {
             body.removeAll { $0 == first }
         }
-        result.append(contentsOf: attachingStrayFootnotes(body))
+        result.append(contentsOf: attachingStrayFootnotes(droppingLeadingMetadata(body)))
         return result
+    }
+
+    /// Publication furniture at the top of an article — "Sep 24th 2026 | 5 min read", "Updated March 3, 2026" —
+    /// is noise when it's the first thing spoken. Only short paragraphs among the first few blocks are dropped.
+    static func droppingLeadingMetadata(_ blocks: [Block]) -> [Block] {
+        var out = blocks
+        var index = 0, seen = 0
+        while index < out.count, seen < 3 {
+            let block = out[index]
+            guard block.kind == .paragraph else {
+                if block.kind.isSpeakable { seen += 1 }
+                index += 1
+                continue
+            }
+            if isMetadataLine(block.plainText) {
+                out.remove(at: index)
+            } else {
+                seen += 1
+                index += 1
+            }
+        }
+        return out
+    }
+
+    static func isMetadataLine(_ raw: String) -> Bool {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, text.count <= 60, text.contains(where: \.isNumber) else { return false }
+        let month = "(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\\.?"
+        let patterns = [
+            #"\b\d+\s*(min|mins|minute|minutes)\b[\s\-]*(read|listen)\b"#,       // "5 min read"
+            "^(updated|published|posted)(:| on)? +(\(month) |\\d{1,2}[/.-]\\d{1,2})",       // "Updated March 3"
+            "^\(month) \\d{1,2}(st|nd|rd|th)?,? \\d{4}\\b",                          // "Sep 24th 2026 …"
+            "^\\d{1,2}(st|nd|rd|th)? \(month),? \\d{4}\\b",                          // "24 September 2026"
+        ]
+        return patterns.contains { text.range(of: $0, options: [.regularExpression, .caseInsensitive]) != nil }
     }
 
     /// Some sites (Paul Graham's essays, older blogs) put a footnote marker like "[5]" on its own line after the

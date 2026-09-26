@@ -14,6 +14,12 @@ public enum ExtractionError: LocalizedError, Sendable, Equatable {
         switch self {
         case .invalidURL: "That doesn't look like a web address."
         case .loadFailed(let message): "The page couldn't be loaded: \(message)"
+        case .httpStatus(let code) where code == 404 || code == 410:
+            "There's no page at this address (HTTP \(code)). Check the link."
+        case .httpStatus(let code) where code == 401 || code == 403:
+            "The site refused to serve the page (HTTP \(code)). It may want you to sign in or pass a check."
+        case .httpStatus(429): "The site is limiting requests right now (HTTP 429). Try again in a minute."
+        case .httpStatus(let code) where code >= 500: "The site had a server error (HTTP \(code)). Try again later."
         case .httpStatus(let code): "The site answered with an error (HTTP \(code))."
         case .timedOut: "The page took too long to load."
         case .notReadable(let reason, _, _):
@@ -248,6 +254,11 @@ final class PageLoader: NSObject, WKNavigationDelegate {
             httpStatus = (navigationResponse.response as? HTTPURLResponse)?.statusCode
             mimeType = navigationResponse.response.mimeType
             if let mime = mimeType, mime == "application/pdf" || mime.hasPrefix("audio/") || mime.hasPrefix("video/") {
+                return .cancel
+            }
+            // An error status decides the outcome on its own; don't wait for the error page's ads and scripts.
+            if let status = httpStatus, status >= 400 {
+                finish(nil)
                 return .cancel
             }
         }

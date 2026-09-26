@@ -272,6 +272,9 @@
     // Readability discards hidden nodes; collapsed sections (hidden="until-found", closed <details>) are real text.
     doc.querySelectorAll('[hidden="until-found"]').forEach(el => el.removeAttribute("hidden"));
     doc.querySelectorAll("details:not([open])").forEach(el => el.setAttribute("open", ""));
+    // <font> is presentational, but Readability doesn't count it as phrasing content, so a <br><br>-separated
+    // paragraph containing one ("[<a><font>3</font></a>] That second…", Paul Graham's notes) is cut in two.
+    doc.querySelectorAll("font").forEach(el => el.replaceWith(...Array.from(el.childNodes)));
     for (const sel of BOILERPLATE) {
       try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch (e) { /* unsupported selector */ }
     }

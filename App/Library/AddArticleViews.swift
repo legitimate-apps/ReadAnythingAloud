@@ -123,6 +123,7 @@ struct AddFailureSheet: View {
         switch failure.error as? ExtractionError {
         case .notReadable(let reason, _, _): reason == nil ? "No article found" : "This page is blocked"
         case .httpStatus(let code) where code == 401 || code == 403: "This page is blocked"
+        case .httpStatus(let code) where code == 404 || code == 410: "Page not found"
         case .timedOut: "The page took too long"
         case .invalidURL: "That's not a link"
         default: "Couldn't load the page"
@@ -133,6 +134,7 @@ struct AddFailureSheet: View {
         switch failure.error as? ExtractionError {
         case .notReadable(let reason, _, _): reason == nil ? "doc.text.magnifyingglass" : "lock.doc"
         case .invalidURL: "link"
+        case .httpStatus(let code) where code == 404 || code == 410: "questionmark.circle"
         default: "wifi.exclamationmark"
         }
     }

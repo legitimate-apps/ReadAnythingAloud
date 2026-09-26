@@ -92,6 +92,24 @@ import Testing
         #expect(!text.contains("Truly hidden furniture"))
     }
 
+    @Test func fontWrappedFootnoteMarkersStayInTheirParagraph() async throws {
+        let prose = String(repeating: "Great work tends to come from people who are curious about a field. ", count: 5)
+        let html = """
+        <html><head><title>How to Do Great Work</title></head><body><table><tr><td><font size=2 face="verdana">
+        \(prose)<a href="#f1n"><font color=#dddddd>[<font color=#999999>1</font>]</font></a><br /><br />
+        <b>Notes</b><br /><br />[<a name="f1n"><font color=#000000>1</font></a>]
+        That second qualifier is critical, and it is worth saying again at some length here.<br /><br />
+        [<a name="f2n"><font color=#000000>2</font></a>]
+        Another note that follows the first one and also has enough words to be a paragraph.
+        </font></td></tr></table></body></html>
+        """
+        let article = try await ArticleExtractor().extract(html: html, baseURL: URL(string: "https://paulgraham.com/greatwork.html")!)
+        let texts = article.blocks.map { $0.plainText.trimmingCharacters(in: .whitespacesAndNewlines) }
+        #expect(!texts.contains("["))
+        #expect(texts.contains { $0.hasPrefix("[1]") && $0.contains("That second qualifier") })
+        #expect(texts.contains { $0.hasPrefix("[2]") && $0.contains("Another note") })
+    }
+
     @Test func titleKeepsColonsAndUnrelatedSegments() async throws {
         let body = String(repeating: "A long paragraph about processors and their design trade-offs in practice. ", count: 6)
         for (title, expected) in [("Apple: The New Chips", "Apple: The New Chips"),

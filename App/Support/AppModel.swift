@@ -32,7 +32,10 @@ final class AppModel {
         let id = UUID()
         var url: URL?
         var error: Error
-        var canOpenPage: Bool { url != nil && !(url?.isFileURL ?? true) }
+        var canOpenPage: Bool {
+            if case .httpStatus(let code) = error as? ExtractionError, code == 404 || code == 410 { return false }
+            return url != nil && !(url?.isFileURL ?? true)
+        }
         var canReadWholePage: Bool {
             if case .notReadable = error as? ExtractionError { return true }
             return false

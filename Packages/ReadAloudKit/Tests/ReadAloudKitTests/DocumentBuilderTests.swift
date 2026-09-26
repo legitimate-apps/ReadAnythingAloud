@@ -122,4 +122,25 @@ import Testing
         #expect(doc.previousBlockSentence(before: 2) == 0)
         #expect(doc.previousBlockSentence(before: 0) == 0)
     }
+
+    @Test func leadingDateAndReadTimeLinesAreNotSpoken() {
+        for line in ["Sep 24th 2026|5 min read", "Updated March 3, 2026", "24 September 2026", "12 min read"] {
+            #expect(DocumentBuilder.isMetadataLine(line), "\(line)")
+        }
+        for line in ["Published in 1998, the book sold well.", "May 2026 be a better year for all of us than the last",
+                     "The 5 minutes that changed everything", "Updated guidance from the agency follows."] {
+            #expect(!DocumentBuilder.isMetadataLine(line), "\(line)")
+        }
+        let article = Article(title: "How the Fed should measure inflation", siteName: "The Economist", blocks: [
+            Block(kind: .paragraph, text: "Sep 24th 2026|5 min read"),
+            Block(kind: .paragraph, text: "IN THE EARLY 1970s Arthur Burns had an inflation problem."),
+            Block(kind: .paragraph, text: "Oil prices rose."),
+            Block(kind: .paragraph, text: "Food prices rose too."),
+            Block(kind: .paragraph, text: "12 min read"),
+        ])
+        let doc = DocumentBuilder.build(article)
+        #expect(!doc.text.contains("5 min read"))
+        #expect(doc.text.contains("Arthur Burns"))
+        #expect(doc.text.contains("12 min read"), "only the first few blocks are considered")
+    }
 }
