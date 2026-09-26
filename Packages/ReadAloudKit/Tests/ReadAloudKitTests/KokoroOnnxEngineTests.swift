@@ -4,6 +4,18 @@ import NaturalLanguage
 import Testing
 @testable import ReadAloudKit
 
+struct ModelDownloaderTests {
+    @Test func sha256MatchesKnownDigest() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try Data("abc".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        #expect(try ModelDownloader.sha256Hex(of: url) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+    }
+}
+
+// ONNX Runtime is linked on iOS only; run these with an iOS Simulator destination
+// (`xcodebuild test -scheme ReadAloudKit -destination 'platform=iOS Simulator,…'`).
+#if os(iOS)
 @Suite struct KokoroOnnxEngineUnitTests {
     @Test func styleRowIsTheFullRowForThePhonemeCount() throws {
         let cols = KokoroAneConstants.voicePackCols
@@ -12,13 +24,6 @@ import Testing
         #expect(KokoroOnnxEngine.styleRow(pack, phonemeCount: 40) == Array(repeating: 39, count: cols))
         #expect(KokoroOnnxEngine.styleRow(pack, phonemeCount: 0).first == 0)
         #expect(KokoroOnnxEngine.styleRow(pack, phonemeCount: 9_999).first == Float(KokoroAneConstants.voicePackRows - 1))
-    }
-
-    @Test func sha256MatchesKnownDigest() throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try Data("abc".utf8).write(to: url)
-        defer { try? FileManager.default.removeItem(at: url) }
-        #expect(try ModelDownloader.sha256Hex(of: url) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
     }
 }
 
@@ -96,3 +101,4 @@ struct KokoroOnnxEngineModelTests {
     }
     #endif
 }
+#endif

@@ -1,3 +1,4 @@
+#if os(iOS)
 import FluidAudio
 import Foundation
 import OnnxRuntimeBindings
@@ -236,3 +237,4 @@ final class KokoroOnnxGraph: @unchecked Sendable {
         return data.withUnsafeBytes { Array($0.bindMemory(to: Float.self)) }
     }
 }
+#endif

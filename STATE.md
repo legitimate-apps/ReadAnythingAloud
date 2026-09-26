@@ -36,8 +36,14 @@ Updated: 2026-09-26
   Legitimate ASC key (`~/.appstoreconnect/config-legitimate.sh`). Failed processing shows only in the
   ASC web UI (TestFlight → Build Uploads), not in /v1/builds.
 
+## Notes
+- ONNX Runtime is linked on iOS only (Mac app 73 → 42 MB). The ORT engine and its tests compile only for iOS;
+  run them with `xcodebuild test -scheme ReadAloudKit-Package -destination 'platform=iOS Simulator,id=…'`.
+- On the iOS Simulator, the package's `file://` fixture extractions (`extract(url:)` on bundled HTML) can hit
+  the 30 s timeout depending on test order, while `extract(html:)` tests pass. Production iOS never loads
+  file URLs (files are read and passed as HTML); real web pages extract in ~1 s on the iPad.
+
 ## Next action
 1. Install iOS build 3 from TestFlight on the iPad; re-check Kokoro in the release build (stub removed).
 2. iPad memory: footprint growth over a long session with the current build.
 3. ElevenLabs tiny test with the vault key.
-4. Mac: consider limiting onnxruntime to iOS to trim the Mac bundle.
