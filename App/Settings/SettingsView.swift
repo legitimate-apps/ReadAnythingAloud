@@ -49,20 +49,27 @@ struct SettingsView: View {
             }
 
             Section {
-                SecureField("API key", text: $apiKey)
-                    .textContentType(.password)
-                    .autocorrectionDisabled()
-                    .accessibilityIdentifier("settings.elevenKey")
+                // Field and its Save button share a row so an empty, disabled button never reads as a second field.
                 HStack {
-                    Button(settings.hasElevenLabsKey ? "Replace Key" : "Save Key") { saveKey() }
-                        .disabled(apiKey.trimmingCharacters(in: .whitespaces).isEmpty || checkingKey)
-                    if settings.hasElevenLabsKey {
-                        Button("Remove Key", role: .destructive) {
-                            settings.setElevenLabsKey(nil)
-                            keyStatus = "Key removed."
-                        }
+                    SecureField(settings.hasElevenLabsKey ? "New API key" : "API key", text: $apiKey)
+                        .textContentType(.password)
+                        .autocorrectionDisabled()
+                        .onSubmit { if canSaveKey { saveKey() } }
+                        .accessibilityIdentifier("settings.elevenKey")
+                    if checkingKey {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Button(settings.hasElevenLabsKey ? "Replace" : "Save") { saveKey() }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                            .disabled(!canSaveKey)
                     }
-                    if checkingKey { ProgressView().controlSize(.small) }
+                }
+                if settings.hasElevenLabsKey {
+                    Button("Remove Key", role: .destructive) {
+                        settings.setElevenLabsKey(nil)
+                        keyStatus = "Key removed."
+                    }
                 }
                 if let keyStatus { Text(keyStatus).font(.footnote).foregroundStyle(.secondary) }
                 Picker("Model", selection: $settings.elevenLabsModel) {
@@ -94,11 +101,18 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .navigationTitle("Settings")
         #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .modifier(OpaqueTopEdge())
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         #else
         .frame(minWidth: 480, minHeight: 520)
         #endif
         .task { cacheSize = await ClipCache.shared.sizeInBytes() }
+    }
+
+    private var canSaveKey: Bool {
+        !apiKey.trimmingCharacters(in: .whitespaces).isEmpty && !checkingKey
     }
 
     private func voiceName(_ voice: VoiceID) -> String {
@@ -127,3 +141,16 @@ struct SettingsView: View {
         }
     }
 }
+
+#if os(iOS)
+/// On iOS 26 the soft scroll-edge effect leaves rows legible behind the sheet's title; a hard edge hides them.
+private struct OpaqueTopEdge: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.scrollEdgeEffectStyle(.hard, for: .top)
+        } else {
+            content
+        }
+    }
+}
+#endif

@@ -10,7 +10,7 @@ settings:
   base:
     DEVELOPMENT_TEAM: 3LTL47SJ8C
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "2"
+    CURRENT_PROJECT_VERSION: "3"
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     CODE_SIGN_STYLE: Automatic
@@ -83,6 +83,16 @@ targets:
         ENABLE_HARDENED_RUNTIME: YES
         "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": App/Support/ReadAnythingAloud-iOS.entitlements
         "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": App/Support/ReadAnythingAloud-iOS.entitlements
+        # The script below deletes a bundle path, which the user-script sandbox doesn't permit.
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    postBuildScripts:
+      - name: Remove unused ONNX Runtime stub
+        basedOnDependencyAnalysis: false
+        script: |
+          # onnxruntime ships as a static xcframework and is linked into the app binary, but Xcode still embeds
+          # an empty stub onnxruntime.framework. Nothing loads it, and App Store validation rejects its
+          # Info.plist (ITMS-90208), so drop it before the app is signed.
+          rm -rf "${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/onnxruntime.framework"
   ShareExtension:
     type: app-extension
     platform: iOS
