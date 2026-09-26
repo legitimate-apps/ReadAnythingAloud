@@ -12,12 +12,15 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/FluidInference/FluidAudio.git", exact: "0.17.4"),
+        // Kokoro on ONNX Runtime's CPU execution provider (iOS, where the Core ML route crashes in BNNS).
+        .package(url: "https://github.com/microsoft/onnxruntime-swift-package-manager.git", exact: "1.24.2"),
     ],
     targets: [
         .target(
             name: "ReadAloudKit",
             dependencies: [
                 .product(name: "FluidAudio", package: "FluidAudio"),
+                .product(name: "onnxruntime", package: "onnxruntime-swift-package-manager"),
             ],
             resources: [
                 .copy("Resources/Readability.js"),
