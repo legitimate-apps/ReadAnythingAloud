@@ -7,7 +7,13 @@ import Observation
 public final class VoiceSettings {
     public static let shared = VoiceSettings()
 
+    /// On-device Kokoro. macOS runs FluidAudio's Core ML graph; iOS runs the same model on ONNX Runtime's CPU
+    /// provider, because the Core ML graph trips an Apple BNNS bug on iOS 26.4+ (FluidAudio #844/#889).
+    #if os(iOS)
+    @ObservationIgnored public let kokoro = KokoroOnnxEngine()
+    #else
     @ObservationIgnored public let kokoro = KokoroEngine()
+    #endif
     @ObservationIgnored public let apple = AppleSpeechEngine()
     @ObservationIgnored private var elevenLabsCache: ElevenLabsEngine?
 
@@ -38,17 +44,29 @@ public final class VoiceSettings {
     }
 
     public var kokoroState: ModelState
+    /// Download progress (0…1) while the natural voice's model is being fetched, when the engine reports it.
+    public var kokoroProgress: Double?
 
     public var hasElevenLabsKey: Bool
 
-    /// Whether on-device Kokoro can run on this platform. The Core ML Kokoro graph trips an Apple runtime bug on
-    /// iOS 26.4+ (BNNS CPU inference traps; FluidAudio #844/#889, reproduced on an iPad at the first sentence), so
-    /// iOS uses Apple voices until the ONNX Runtime executor replaces it there. macOS is unaffected.
-    public static var isKokoroAvailable: Bool {
-        #if os(macOS)
-        true
+    /// Whether on-device Kokoro can run on this platform.
+    public static var isKokoroAvailable: Bool { true }
+
+    /// Whether the natural voice's models are already on disk.
+    public static var isKokoroDownloaded: Bool {
+        #if os(iOS)
+        KokoroOnnxEngine.isDownloaded
         #else
-        false
+        KokoroEngine.isDownloaded
+        #endif
+    }
+
+    /// First-run download size, for the UI. (iOS fetches the ONNX graph plus FluidAudio's frontend assets.)
+    public static var kokoroDownloadSize: String {
+        #if os(iOS)
+        "about 250 MB"
+        #else
+        "about 150 MB"
         #endif
     }
 
@@ -64,7 +82,7 @@ public final class VoiceSettings {
         let savedRate = defaults.float(forKey: "playback.rate")
         rate = savedRate == 0 ? 1.0 : savedRate
         elevenLabsModel = defaults.string(forKey: "elevenlabs.model") ?? ElevenLabsEngine.defaultModel
-        kokoroState = KokoroEngine.isDownloaded ? .ready : .notDownloaded
+        kokoroState = Self.isKokoroDownloaded ? .ready : .notDownloaded
         hasElevenLabsKey = !(KeychainStore.string(for: KeychainStore.elevenLabsKey) ?? "").isEmpty
     }
 
@@ -95,7 +113,6 @@ public final class VoiceSettings {
         }
     }
 
-    /// Downloads and loads Kokoro. Updates `kokoroState`.
     /// Downloads (first time) and loads the Kokoro models. Concurrent callers share one load and all return once
     /// it finishes, so a play request made during launch warm-up simply waits for it.
     public func prepareKokoro() async {
@@ -106,11 +123,18 @@ public final class VoiceSettings {
         guard kokoroState != .ready else { return }
         kokoroState = .preparing
         do {
+            #if os(iOS)
+            try await kokoro.prepare { fraction in
+                Task { @MainActor [weak self] in self?.kokoroProgress = fraction }
+            }
+            #else
             try await kokoro.prepare()
+            #endif
             kokoroState = .ready
         } catch {
             kokoroState = .failed(error.localizedDescription)
         }
+        kokoroProgress = nil
     }
 
     /// The voice to use for a document: the preferred voice when it can speak the language, otherwise the best

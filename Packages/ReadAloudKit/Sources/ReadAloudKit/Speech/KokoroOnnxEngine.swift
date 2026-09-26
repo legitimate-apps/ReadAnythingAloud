@@ -16,9 +16,9 @@ public actor KokoroOnnxEngine: SpeechEngine {
 
     // MARK: - Model asset
 
-    /// Where the ONNX graph is downloaded from on first use.
+    /// Where the ONNX graph is downloaded from on first use: the onnx-community export at a pinned revision (hash-checked).
     public nonisolated static let modelDownloadURL = URL(
-        string: "https://github.com/legitimate-apps/ReadAnythingAloud/releases/download/kokoro-onnx-v1.0/kokoro-82m-v1.0-timestamped-int8.onnx")!
+        string: "https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX-timestamped/resolve/dd4401a9add81ac692d20e240d22ec9dda82cc29/onnx/model_quantized.onnx")!
     static let modelSHA256 = "c0c02b3299fd97c34ea92a98e6d41eaa1a739c8f77bf685aac34bd7b34c1132c"
     static let modelByteCount: Int64 = 92_361_055
     static let modelFileName = "kokoro-82m-v1.0-timestamped-int8.onnx"

@@ -6,7 +6,7 @@ This product includes or downloads the following third-party components.
 Kokoro-82M v1.0 (speech model weights and voice packs)
   https://huggingface.co/hexgrad/Kokoro-82M
   Copyright hexgrad. Licensed under the Apache License, Version 2.0.
-  The ONNX graph downloaded at runtime (kokoro-82m-v1.0-timestamped-int8.onnx) is the unmodified
+  On iOS, the ONNX graph downloaded at runtime (kokoro-82m-v1.0-timestamped-int8.onnx) is the unmodified
   int8 export published as onnx-community/Kokoro-82M-v1.0-ONNX-timestamped (Apache-2.0),
   revision dd4401a9add81ac692d20e240d22ec9dda82cc29, file onnx/model_quantized.onnx.
 

@@ -21,9 +21,9 @@ struct SettingsView: View {
                     case .ready:
                         Label("Natural voices downloaded", systemImage: "checkmark.circle").foregroundStyle(.secondary)
                     case .preparing:
-                        HStack { ProgressView().controlSize(.small); Text("Downloading natural voices…") }
+                        KokoroPreparingLabel(settings: settings)
                     case .notDownloaded:
-                        Button("Download natural voices (about 150 MB)") { Task { await settings.prepareKokoro() } }
+                        Button("Download natural voices (\(VoiceSettings.kokoroDownloadSize))") { Task { await settings.prepareKokoro() } }
                     case .failed(let message):
                         VStack(alignment: .leading) {
                             Text(message).font(.footnote).foregroundStyle(.red)
@@ -87,7 +87,7 @@ struct SettingsView: View {
             Section("About") {
                 LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "–")
                 Link("Source code (MIT)", destination: URL(string: "https://github.com/legitimate-apps/ReadAnythingAloud")!)
-                Text("Kokoro-82M (Apache-2.0) via FluidAudio (Apache-2.0). Article extraction by Mozilla Readability (Apache-2.0).")
+                Text("Kokoro-82M (Apache-2.0) via FluidAudio (Apache-2.0) and ONNX Runtime (MIT). Article extraction by Mozilla Readability (Apache-2.0).")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }

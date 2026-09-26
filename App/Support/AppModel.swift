@@ -63,7 +63,7 @@ final class AppModel {
     /// Loading Kokoro takes ~25 s per launch (Core ML specializes the models for the Neural Engine), so start it
     /// in the background as soon as the app opens rather than when the listener presses play.
     private func warmUpVoice() {
-        guard VoiceSettings.isKokoroAvailable, settings.preferredVoice.engine == .kokoro, KokoroEngine.isDownloaded else { return }
+        guard VoiceSettings.isKokoroAvailable, settings.preferredVoice.engine == .kokoro, VoiceSettings.isKokoroDownloaded else { return }
         let settings = settings
         Task(priority: .utility) { await settings.prepareKokoro() }
     }

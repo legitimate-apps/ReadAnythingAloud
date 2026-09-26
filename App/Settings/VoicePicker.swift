@@ -100,12 +100,12 @@ struct VoicePicker: View {
         case .ready:
             EmptyView()
         case .preparing:
-            HStack { ProgressView(); Text("Downloading natural voices (about 150 MB)…") }
+            KokoroPreparingLabel(settings: settings)
         case .notDownloaded:
             Button {
                 Task { await settings.prepareKokoro() }
             } label: {
-                Label("Download natural voices (about 150 MB)", systemImage: "arrow.down.circle")
+                Label("Download natural voices (\(VoiceSettings.kokoroDownloadSize))", systemImage: "arrow.down.circle")
             }
         case .failed(let message):
             VStack(alignment: .leading) {
@@ -196,5 +196,24 @@ final class VoicePreviewer {
         data.append(contentsOf: Array("data".utf8)); append(UInt32(pcm.count * 2).littleEndian)
         pcm.forEach { append($0.littleEndian) }
         return data
+    }
+}
+
+/// "Downloading natural voices…" with a determinate bar once the engine reports progress.
+struct KokoroPreparingLabel: View {
+    let settings: VoiceSettings
+
+    var body: some View {
+        if let progress = settings.kokoroProgress, progress < 1 {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Downloading natural voices… \(Int(progress * 100))%")
+                ProgressView(value: progress)
+            }
+        } else {
+            HStack {
+                ProgressView().controlSize(.small)
+                Text(VoiceSettings.isKokoroDownloaded ? "Loading natural voices…" : "Downloading natural voices…")
+            }
+        }
     }
 }

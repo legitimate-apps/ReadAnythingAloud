@@ -267,9 +267,9 @@ public final class ReadingSession {
     private func start(sentence target: Int, word targetWord: Int?) {
         voiceTask?.cancel()
         if voice.engine == .kokoro, settings.kokoroState != .ready {
-            preparingMessage = KokoroEngine.isDownloaded
+            preparingMessage = VoiceSettings.isKokoroDownloaded
                 ? "Loading the natural voice…"
-                : "Downloading the natural voice (about 150 MB, first time only)…"
+                : "Downloading the natural voice (\(VoiceSettings.kokoroDownloadSize), first time only)…"
             state = .buffering
             voiceTask = Task {
                 await settings.prepareKokoro()
