@@ -10,7 +10,7 @@ settings:
   base:
     DEVELOPMENT_TEAM: 3LTL47SJ8C
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "3"
+    CURRENT_PROJECT_VERSION: "4"
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     CODE_SIGN_STYLE: Automatic
@@ -44,7 +44,9 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false
-        LSSupportsOpeningDocumentsInPlace: false
+        # Declared document types need an answer (ASC 90737), and macOS rejects NO. Files are read in place
+        # inside a security-scoped access window (AppModel.addFile).
+        LSSupportsOpeningDocumentsInPlace: true
         LSApplicationCategoryType: public.app-category.productivity
         UIBackgroundModes: [audio]
         UILaunchScreen: {}
