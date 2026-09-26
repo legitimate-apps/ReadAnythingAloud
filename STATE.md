@@ -30,8 +30,8 @@ Updated: 2026-09-26
 - Builds 1 and 2 were rejected in processing: ITMS-90208, Xcode embedded an empty stub
   onnxruntime.framework (ORT is a static xcframework already linked into the binary). A post-build phase
   now deletes the stub. Build 3 carries the fix; upload status is below in the log.
-- Upload: `scripts/release.sh` — archive (Release, generic platform) → export with
-  scripts/export-*.plist (manual signing) → `xcrun altool --upload-app` with the
+- Upload: `Scripts/release.sh` — archive (Release, generic platform) → export with
+  Scripts/export-*.plist (manual signing) → `xcrun altool --upload-app` with the
   Legitimate ASC key (`~/.appstoreconnect/config-legitimate.sh`). Failed processing shows only in the
   ASC web UI (TestFlight → Build Uploads), not in /v1/builds.
 

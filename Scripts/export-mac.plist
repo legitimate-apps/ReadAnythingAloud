@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key><string>app-store-connect</string>
+  <key>destination</key><string>export</string>
+  <key>signingStyle</key><string>manual</string>
+  <key>teamID</key><string>3LTL47SJ8C</string>
+  <key>signingCertificate</key><string>C3EF173D8759786213B22C7BE6E151DA97CADD23</string>
+  <key>installerSigningCertificate</key><string>9773BB9D74D67F6C50D2240F4E2D6EDF39AF16FE</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>com.legitimateapps.ReadAnythingAloud</key><string>fb499d8d-d87d-4901-941d-f12839baea61</string>
+  </dict>
+  <key>uploadSymbols</key><true/>
+</dict>
+</plist>
