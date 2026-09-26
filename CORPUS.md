@@ -18,7 +18,9 @@ in sync — like Storyteller does for audiobooks — and full audio controls. Lo
    cookies work) and Mozilla Readability (Apache-2.0, bundled) extracts the article; a DOM walker turns it
    into typed blocks (heading, paragraph, list item, quote, code, image, caption).
 4. **Voices (engines behind one protocol, unit = sentence):**
-   - Kokoro-82M via FluidAudio (Apache-2.0), on-device neural, word timings from predicted durations.
+   - Kokoro-82M, on-device neural, word timings from the model's predicted durations. macOS runs FluidAudio's
+     Core ML graph; iOS runs the int8 ONNX export on ONNX Runtime's CPU provider, because the Core ML graph
+     trips an Apple BNNS bug on iOS 26.4+ (FluidAudio #844/#889). FluidAudio supplies the text frontend on both.
    - Apple system voices (AVSpeechSynthesizer `write` + `willSpeakRange` frame stamps).
    - ElevenLabs (optional, user's own key, `with-timestamps` character alignment).
    - Engines without timings → Parakeet TDT v3 (or better) word timestamps aligned to the known text.
@@ -27,6 +29,8 @@ in sync — like Storyteller does for audiobooks — and full audio controls. Lo
    highlight is a lookup of media time. Sentence audio cached on disk.
 6. **Reading view:** TextKit 2 text view; minimal, good-looking highlight: soft sentence tint + an animated
    word pill. Tap a word to jump, follow mode with "back to reading", resume position per article.
+7. **Look:** signature color is a desaturated, slightly dark salmon (asset `AccentColor`, `Color.signature`;
+   operator 2026-09-25). Icon, highlights and controls use it.
 
 ## 3. Constraints
 
