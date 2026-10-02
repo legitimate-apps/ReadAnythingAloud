@@ -2,7 +2,8 @@
 
 ## Delivery
 - Integration branch: `astra/core-experience-1002`, isolated worktree `ReadAloud-astra-1002`, base `121e5c4`.
-- Finished at 12:16 EDT. Code through `de3b12c`, real-model verification in `7390879`; all changes committed and pushed.
+- Original run finished at 12:16 EDT. Bounded iOS follow-up verified at 12:42 EDT; evidence delivery below.
+- Production code through `de3b12c`, real-model verification in `7390879`; no production changes in the follow-up.
 - PR: [#1 — Make extraction, speech playback and reader follow reliable](https://github.com/legitimate-apps/ReadAnythingAloud/pull/1), open for review; not merged.
 - Main checkout remains clean at `121e5c4`. No merge, release, store submission, spending or third-party messages.
 - Commits use legitimate-apps and `Co-Authored-By: Codex <noreply@openai.com>`.
@@ -86,8 +87,8 @@ All owned simulator and DerivedData leases are released. The owned simulator was
 Builds/tests are finished; no helper or emulator is running for this run.
 
 ## Limits and remaining roadmap
-- No new iPhone/iPad runtime or physical-device interruption evidence. Precrash simulator launch wedged;
-  final simulator builds establish compilation, not playback or UI behavior on devices.
+- The bounded follow-up verified Apple buffering Play/Pause/Resume and Back to reading on iPhone17Pro,
+  iOS26.5 Simulator. Physical-device interruption delivery, iPad layout and ONNX runtime remain unverified.
 - Real Mac Kokoro overflow recovery passed with cached models: raw engine rejected a 299-character numeric
   passage; the wrapper produced 1,680,000 samples at 24 kHz (70 seconds) and 60 ordered, positive word timings.
   This proves real synthesis/recovery, not a listening-quality judgment or iOS ONNX runtime behavior.
@@ -96,11 +97,10 @@ Builds/tests are finished; no helper or emulator is running for this run.
 - Historical September 26 device/release observations in STATE.md remain historical and were not reverified.
 
 ## Exact next step
-Review the PR diff, then lease one iOS device/simulator and verify the final branch on iPhone/iPad:
-Apple voice Play/Pause during buffering, interrupted playback with/without resume permission, completion
-followed by voice switch/reopen, and Back to reading after browsing while playback advances. Capture
-screen evidence and release the device. On existing downloaded Kokoro models, follow with a long numeric
-and unpunctuated passage to exercise real phoneme expansion and listen/check word highlights at chunk joins.
+Review PR#1, then verify physical iOS interruption delivery with/without resume permission, completion
+followed by voice switch/reopen, iPad layout, and a long numeric/unpunctuated passage using existing iOS
+Kokoro models. Listen/check word highlights at chunk joins and monitor memory during extended playback.
+The requested iPhone simulator buffering controls and Back to reading scenarios are complete; see below.
 Do not merge, release or spend on cloud speech without the applicable authorization.
 
 ## Final real-model verification — 12:13 EDT
@@ -109,3 +109,16 @@ of 2024; production recovery must return non-silent 24 kHz audio and all 60 mono
 clip duration. Test passed in 16.979s with existing cached models (`real-kokoro-overflow.log`). No cloud speech
 calls. Default test runs skip this model-dependent case unless READALOUD_KOKORO_COREML=1.
 Latest operator timing: start nothing new after 12:15, wrap at 12:25. This run is finished, with no outstanding implementation.
+
+## Bounded iOS follow-up — finished 12:42 EDT
+Operator reopened the run for exactly two simulator checks, with commit/push/release due by12:50.
+- One leased iPhone17Pro/iOS26.5; installed the final existing build, no source modifications or model downloads.
+- Apple Karen selected in the UI and confirmed in persisted app preferences after stopping.
+- **Passed:** Play/Pause with real uncached Apple synthesis. Recording captures the buffering spinner then
+  paused Play control; two later snapshots remain at1:53. Resume advances to1:56 with Pause and highlight.
+- **Passed:** Browse ahead during playback, then Back to reading. Playback advanced0:26→0:39; the button
+  disappeared and the currently spoken sentence returned above the controls with its highlight.
+- Screenshots, four-second video, synthetic fixture, snapshots and method are committed under
+  [iOS evidence](evidence/ASTRA-1002/ios/README.md). The method records screen-level evidence and its limits.
+- App stopped, recorder exited, simulator confirmed Shutdown and disposed; DerivedData lease released12:41.
+- In progress: none. No helpers were started. Main checkout untouched. No merges or releases.

@@ -8,6 +8,8 @@ not a release. Playback intent, failure recovery, completion/resume, interruptio
 extraction fidelity/cancellation, multilingual segmentation, long-text Kokoro recovery and reader rejoin
 are covered by regressions. Both app platforms build; Mac reader viewport tests and real cached Kokoro
 overflow synthesis pass. See [the run state](state/ASTRA-1002.md) for evidence, limits and the exact next step.
+The bounded follow-up also verified Apple-voice buffering Play/Pause/Resume and Back to reading on one
+iPhone17Pro/iOS26.5 simulator; [screen evidence](state/evidence/ASTRA-1002/ios/README.md) is committed.
 The September device and release observations below remain historical.
 
 ## Decisions (operator, 2026-09-25)
@@ -52,7 +54,7 @@ The September device and release observations below remain historical.
   file URLs (files are read and passed as HTML); real web pages extract in ~1 s on the iPad.
 
 ## Next action
-1. Review the core-experience PR and verify the final branch on one leased iPhone/iPad device or simulator;
-   use the exact controls, interruption and reader scenarios in [the run state](state/ASTRA-1002.md).
+1. Review the core-experience PR, then verify physical iOS interruption delivery, completion followed by
+   voice switch/reopen, and iPad layout. The bounded iPhone simulator controls/follow checks are complete.
 2. Check long numeric/unpunctuated passages on iOS Kokoro and memory growth during extended playback.
 3. Revisit release/TestFlight validation and optional ElevenLabs testing in a separately authorized run.
