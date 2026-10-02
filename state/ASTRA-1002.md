@@ -112,3 +112,9 @@ Xcode test runner could not load this external-volume bundle; build-for-testing 
 READALOUD_READER_EVIDENCE_DIR writes rendered JPEGs. No screenshots or device-runtime claims for iOS.
 Independent source review of the integrated chunking and extraction commits found no concrete regression.
 Next: final integrated package suite, Mac/iOS app builds, bounded iOS smoke if host remains healthy; PR.
+
+## Integrated verification — 12:00 EDT
+Final package run at0095f5b:97 tests/16suites reported passed13.163s (2optional live-web skips),
+`final-package-tests.log`. No new package failures. Reader increment pushed immediately.
+Final Mac/iOS app builds now sequential. Another project owns a booted simulator, so ours remains
+Shutdown to honor the one-simulator limit; no borrowing or stopping another session's device.
