@@ -45,3 +45,11 @@ contract, run-to-done and simulator lifecycle skills. Current release state is h
 ## Next
 Extract fidelity regressions for lazy images, list numbering/hidden content, and table cells. Build iOS
 and inspect real controls with the simulator pilot skills; add further synchronization/voice checks.
+
+## Extraction increment
+- Lazy images and picture sources resolved without needing image downloads; preserve zero/start/value/reversed
+  ordered-list numbering; hide nested list paragraphs/rows/cells consistently; retain table captions.
+- Four WebKit fidelity tests: original failed six assertions; fixed combined extraction run 18/18 passed.
+  Logs: `extraction-red.log`, `extraction-green.log` in leased DD.
+- iOS simulator app build succeeded (118 s); Mac build succeeded. Full iOS package tests and interactive
+  flows remain to run. iOS build log from XcodeBuildMCP `build_sim_2026-10-02T15-03-58-170Z_pid17296_805467f3.log`.
