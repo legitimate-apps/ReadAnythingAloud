@@ -1,142 +1,109 @@
 # Astra core-experience push — 2026-10-02
 
-## Mission and boundaries
-Advance CORPUS.md, core experience first, continuously through the available morning window.
-Own worktree `ReadAloud-astra-1002`, branch `astra/core-experience-1002`, based on `121e5c4`.
-Main checkout is untouched. No spending, third-party messages, merging, publishing, or releases.
-Repository has no CLAUDE.md/AGENTS.md, PR template, or CI workflow. Follow corpus identity and local verification.
-Commits use legitimate-apps with a Codex coauthor trailer. Push a review branch/PR when verified.
+## Delivery
+- Integration branch: `astra/core-experience-1002`, isolated worktree `ReadAloud-astra-1002`, base `121e5c4`.
+- Implementation complete through `de3b12c`; final verification passed; PR delivery in progress at12:13 EDT.
+- Main checkout remains clean at `121e5c4`. No merge, release, store submission, spending or third-party messages.
+- Commits use legitimate-apps and `Co-Authored-By: Codex <noreply@openai.com>`.
+- Repository has no CI workflow; verification below is local. Never add a self-hosted runner to this public repo.
 
-## Hydrated
-CORPUS.md, STATE.md, README.md, project memory (decisions and release/device reference), shared operating
-contract, run-to-done and simulator lifecycle skills. Current release state is historical, not reverified.
+## Product priorities and completed work
+CORPUS.md, STATE.md, README.md, project memory and the shared operating contract were read before selecting
+work. Priority was the core promise: readable content, reliable speech, synchronized highlighting and controls.
 
-## Selected work and why
-1. Playback intent and failure recovery: pending synthesis can override Pause; final synthesis failure can
-   leave the player active forever. Fix core control reliability with discriminating delayed/failing engines.
-2. Synchronization and progress: audit seeks, voice switches, completion, timing estimates and observation.
-3. Extraction fidelity: typed lists, hidden content, lazy images, readable-page errors and cancellation.
-4. Voice and reader polish selected from findings, with Mac/iOS builds and visual checks for UI changes.
+### Playback and progress
+- Pending synthesis honors the current Play/Pause intent; Resume during buffering is retained.
+- Synthesis failures stop at unread text after queued audio finishes, without retry storms or silent skipping.
+- Stop rejects late work and clears stale positions; short-sentence timing records survive until played.
+- Elapsed time stays observable between words. Pause estimates are counted once, including heading pauses.
+- Completion remains100% after close/reopen and voice changes.99% resumes the real word instead of completing.
+- Repeated Play is idempotent; nonfinite rate changes are ignored; stale voice/queue observers are rejected.
+- Audio interruptions resume only previously playing sessions when the OS permits; explicit Pause cancels intent.
+- Discarded synthesis queues remain cancelled and reject late engine/cache results.
 
-## Evidence / resources
-- Initial main status clean; baseline `121e5c4`.
-- DerivedData lease: `/Volumes/Crucial X8/DerivedData/readaloud-astra-1002`.
-- Simulator preflight returned device types successfully.
-- Build/test output belongs in leased external storage, not the repository.
+### Extraction and speech
+- Lazy images/picture sources, ordered-list start/value/zero/reversed numbering, table captions and hidden
+  nested rows/cells/list paragraphs preserve the readable article more faithfully.
+- Chinese/Japanese text uses language-aware word segmentation; language codes preserve the full primary tag.
+- Long unpunctuated speech units split at clauses, whitespace or grapheme boundaries without losing text.
+- Both Kokoro backends recover from phoneme-limit expansion by recursively splitting and retaining original
+  UTF-16 word alignment, timing offsets and audio order. Other errors and cancellation propagate.
+- Extraction preserves cancellation during navigation and DOM settling. HTTP errors take precedence over
+  MIME classification; unsupported streaming content is rejected once WebKit supplies response policy.
+- Loader reuse resets response/readiness state; operation-bound timeout/cancellation and navigation identity
+  prevent stale completion callbacks from completing the wrong load. Client-side redirects are covered.
 
-## Done
-- Hydration and isolated worktree.
-- Playback recovery: pending synthesis honors Pause and Resume; failed sentences pause at the unread text
-  after queued audio finishes; retry remains possible without automatic request storms. Stop discards stale
-  positions/results, engine-start failure stays paused, and short-sentence timing records survive until played.
-- Evidence: baseline 54/54 tests. New control against original code failed pause, final failure (300 retries
-  in 8 s), and first-failure retention. Fixed playback suites passed 12/12, then expanded recovery suite
-  passed 6/6 including stop-during-synthesis and real audio-clock coverage of all 12 short sentences.
-  Logs: `baseline-tests.log`, `playback-red.log`, `playback-green.log`, `playback-recovery.log` in leased DD.
+### Reader follow and highlighting
+- Back to reading returns to an unchanged paused sentence and survives an active scroll ending.
+- Deferred rejoin retains forced-layout intent, including when playback advances to a distant sentence.
+- Forced reveals lay out a bounded viewport beyond the target, preventing estimated height from clamping
+  the sentence below playback controls. Highlights refresh after target layout on Mac and iOS.
+- Added a Mac ReaderTests target compiling the production renderer, with three real AppKit viewport tests.
+- Synthetic rendered screenshots: [browsing away](evidence/ASTRA-1002/browsing-away.jpg) and
+  [rejoined sentence](evidence/ASTRA-1002/rejoined-sentence.jpg). The rejoined sentence highlight was inspected.
 
-- Session progress: completion remains 100% after close/reopen, 99% stays resumable, repeated Play does not
-  restart audio, elapsed time is observable between words, invalid rates are ignored. Duration estimation
-  counts pauses once and includes heading pauses. Voice changes/close reject stale queue observers.
-- Evidence: four new session tests failed against the prior implementation (12 assertions); fixed combined
-  playback/session suites passed 18/18 and expanded session suite passed 5/5 (Observation included).
-  `session-red.log`, `session-green.log`, `session-observation.log`. Initial macOS app build succeeded.
-- Owned iPhone 17 Pro simulator: `EB170F21-6485-4FB0-9703-11BE9C49E21F` (iOS 26.5).
+## Verification evidence
+All build/test artifacts are in external leased DerivedData. Central directory:
+`/Volumes/Crucial X8/DerivedData/readaloud-astra-1002`.
 
-## Next
-Extract fidelity regressions for lazy images, list numbering/hidden content, and table cells. Build iOS
-and inspect real controls with the simulator pilot skills; add further synchronization/voice checks.
+| Check | Observed result | Log/artifact |
+| --- | --- | --- |
+| Baseline package |54/54 passed | `baseline-tests.log` |
+| Playback regressions against original | Pause ignored, final failure retried about300times/8s, unread text skipped | `playback-red.log` |
+| Recovered integrated package |97 tests/16suites reported passed in13.163s;2optional live-web tests skipped | `final-package-tests.log` |
+| Long-text chunking/document tests |20/20 passed; exact reconstructed samples and timing offsets, Unicode, cancellation/error coverage | `voice-chunking.log` |
+| Extracted-content fidelity | Original failed6assertions; fixed18/18 combined tests passed | `extraction-red.log`, `extraction-green.log` |
+| Multilingual extraction/segmentation | Original Chinese fixture rejected; fixed30/30 combined tests passed | `multilingual-red.log`, `multilingual-green.log` |
+| Loader HTTP/cancellation/reuse |10/10 focused;25 broader extraction tests executed passed,2live skips | Extraction DD: `loader-recovery-image.log`, `extraction-recovery.log` |
+| Recovered interruption/queue/progress |20tests/4suites passed13.852s, including actual Mac audio completion and pause/resume | Review DD: `recovery-focused.log` |
+| Mac reader regressions | Each added failure reproduced; final3/3 passed2.229s | `reader-baseline-test.log`, `reader-live-scroll-red.log`, `reader-distant-before.log`, `reader-final-tests.log` |
+| Reader target build | Passed | `reader-final-build.log` |
+| Final macOS app build atde3b12c | Passed | `final-mac-build.log` |
+| iOS Simulator app+Share extension | Passed atde3b12c (arm64+x86_64) | `final-ios-build.log` |
 
-## Extraction increment
-- Lazy images and picture sources resolved without needing image downloads; preserve zero/start/value/reversed
-  ordered-list numbering; hide nested list paragraphs/rows/cells consistently; retain table captions.
-- Four WebKit fidelity tests: original failed six assertions; fixed combined extraction run 18/18 passed.
-  Logs: `extraction-red.log`, `extraction-green.log` in leased DD.
-- iOS simulator app build succeeded (118 s); Mac build succeeded. Full iOS package tests and interactive
-  flows remain to run. iOS build log from XcodeBuildMCP `build_sim_2026-10-02T15-03-58-170Z_pid17296_805467f3.log`.
+Package command: `swift test --jobs 2 --package-path Packages/ReadAloudKit --scratch-path "$DD/PackageBuild"`.
+Mac reader command: `xcodebuild -project ReadAnythingAloud.xcodeproj -scheme ReaderTests
+-destination 'platform=macOS,arch=arm64' -derivedDataPath "$DD" -jobs 2 build-for-testing CODE_SIGNING_ALLOWED=NO`,
+then `xcrun xctest "$DD/Build/Products/Debug/ReaderTests.xctest"`.
+Optional `READALOUD_READER_EVIDENCE_DIR` writes JPEGs. The Xcode test runner could not load the external-volume
+bundle on this host; direct xctest successfully executes the same built bundle. This is recorded, not hidden.
+App builds use scheme ReadAnythingAloud, the same DD and2jobs, destinations `platform=macOS,arch=arm64`
+and `generic/platform=iOS Simulator`, with signing disabled. No install/archive/release is implied.
 
-## Parallel push (operator-authorized)
-Operator explicitly requested parallel subagents, independent worktrees and integrator review before 1pm.
-- `astra/extraction-reliability-1002`: ArticleExtractor/PageLoader errors, cancellation, reliable files.
-- `astra/voice-robustness-1002`: Speech engines, long text/chunking, Unicode and timing preservation.
-- `astra/playback-review-1002`: independent review of transport commits plus substantive fixes/interruptions.
-Each has its own sibling worktree/state, same no-spend/no-publishing limits, and reports only here.
-Integrator owns ArticleWalker/Article multilingual counts and reader UI/integration during their work.
+## Recovery, reviews and resource ownership
+The11:40 Terminal crash killed the original helpers. Recovery inspected actual worktrees and logs;
+unverified/crashed helper logs were not counted as passes. Recovered changes were tested, reviewed and
+committed before integration. All useful helper work is integrated; no helper implementation is outstanding.
+- Extraction branch: `astra/extraction-reliability-1002`; details in [extraction state](ASTRA-1002-EXTRACTION.md).
+- Voice branch: `astra/voice-robustness-1002`; details in [voice state](ASTRA-1002-VOICE.md).
+- Review branch: `astra/playback-review-1002`; details in [review state](ASTRA-1002-REVIEW.md).
+Independent review covered playback, chunking and extraction. Reader review found deferred layout intent
+loss; the fix and distant-target regression are integrated. Only one build/test lane ran after recovery.
+Our simulator `EB170F21-6485-4FB0-9703-11BE9C49E21F` stayed Shutdown after recovery; another project owned
+a booted device, so no second simulator was started. No Android emulator was started by this run.
+Final resource release is pending platform build completion.
 
-## Multilingual extraction
-Chinese fixture was rejected as notReadable (20 regex runs despite hundreds of characters). Use browser
-word segmentation over assembled runs and NaturalLanguage library counts; preserve full primary language
-codes in DocumentBuilder. Fixed extraction + document suite 30/30 passed (`multilingual-red.log`,
-`multilingual-green.log`). Chinese and Japanese extraction/segmentation both covered.
+## Limits and remaining roadmap
+- No new iPhone/iPad runtime or physical-device interruption evidence. Precrash simulator launch wedged;
+  final simulator builds establish compilation, not playback or UI behavior on devices.
+- Real Mac Kokoro overflow recovery passed with cached models: raw engine rejected a299-character numeric
+  passage; the wrapper produced1,680,000 samples at24kHz (70seconds) and60 ordered, positive word timings.
+  This proves real synthesis/recovery, not a listening-quality judgment or iOS ONNX runtime behavior.
+  Ordinary successful clips retain their existing model revision/cache.
+- Optional live-web extraction tests, paid ElevenLabs calls and release/TestFlight checks were not run.
+- Historical September26 device/release observations in STATE.md remain historical and were not reverified.
 
-## Final run timing (operator override)
-Aim fully finished by 12:30pm Eastern October 2; absolute cutoff 1pm or usage reset, whichever first.
-Start nothing new after12:15. At most two active helpers. Voice helper interrupted at11:18; integrator owns
-its existing chunking changes and verification. Extraction and review helpers target returning by12:05.
+## Exact next step
+Review the PR diff, then lease one iOS device/simulator and verify the final branch on iPhone/iPad:
+Apple voice Play/Pause during buffering, interrupted playback with/without resume permission, completion
+followed by voice switch/reopen, and Back to reading after browsing while playback advances. Capture
+screen evidence and release the device. On existing downloaded Kokoro models, follow with a long numeric
+and unpunctuated passage to exercise real phoneme expansion and listen/check word highlights at chunk joins.
+Do not merge, release or spend on cloud speech without the applicable authorization.
 
-## Verification environment limitation
-Initial simulator build passed, but interactive launch failed: leased simulator launchd_sim entered U state,
-another booted simulator also showed U state, and a bounded simctl bootstatus child became unreapable ?E.
-XcodeBuildMCP launch timed out after300s. No reboot/shared-service reset performed. No screenshots claimed.
-Mac SwiftPM verification continues; all deferred device-only claims must remain explicitly unproven.
-GitHub authenticated as legitimate-apps; origin main remains121e5c4, public repo, no existing PR history.
-
-## Crash recovery checkpoint — 11:54 EDT
-Terminal crash recovery inspected all worktrees and logs before resuming. Integrated verified long-text
-voice chunking (c56ce5e): exact audio/timing reconstruction, Unicode, cancellation and invalid result
-coverage; 20/20 focused tests passed. Central recovered package suite passed78/78 in12.937s.
-Integrated extraction reliability (6da2178): HTTP/MIME errors, streaming rejection, redirect metadata,
-loader reuse and cancellation;10/10 loader tests,25 broader extraction tests executed passed (2live skips).
-Two recovered helpers maximum; only one build slot. No simulator booted. Review helper is verifying
-interruption/completion/queue cancellation; root is adding a real AppKit reader-follow regression.
-Latest operator timing overrides earlier sections: commit each verified increment immediately with state;
-start nothing new after12:10, wrap at12:20, hard cutoff1pm or usage reset, whichever first.
-
-## Verified review increment — 11:54 EDT
-Integrated b167b08/c47d421/7be4561: interruptions resume only previously playing sessions when the OS
-allows; explicit transport action overrides interrupted intent; voice changes retain actual/restored
-completion; discarded synthesis queues reject late cache/engine results and cannot restart workers.
-Recovered focused review:20 tests/4suites passed13.852s, including real audio completion and pause/resume;
-independent review found no further blocker in the earlier transport/progress commits.
-Central Mac reader test target is building a regression for returning to the unchanged paused sentence.
-
-## Verified reader follow — 11:59 EDT
-Back to reading now reveals an unchanged paused sentence on Mac/iOS. Highlight geometry refresh follows
-the full target layout so a far-away sentence is highlighted at its actual position. Added a ReaderTests
-Mac XCTest target compiling the production renderer. Actual AppKit viewport regression fails on original
-source (target2501pt below viewport, allowed367pt) and passes fixed source. Captured/inspected JPEGs
-show browsing away and rejoined paragraph29 with correct sentence highlight.
-Evidence: reader-baseline-test.log (red), reader-direct-green.log (1test passed), reader-green-build.log,
-Browsing-away-from-paused-sentence.jpg and Rejoined-paused-sentence.jpg in central leased DD.
-Xcode test runner could not load this external-volume bundle; build-for-testing followed by direct
-`xcrun xctest "$DD/Build/Products/Debug/ReaderTests.xctest"` runs successfully. Optional env
-READALOUD_READER_EVIDENCE_DIR writes rendered JPEGs. No screenshots or device-runtime claims for iOS.
-Independent source review of the integrated chunking and extraction commits found no concrete regression.
-Next: final integrated package suite, Mac/iOS app builds, bounded iOS smoke if host remains healthy; PR.
-
-## Integrated verification — 12:00 EDT
-Final package run at0095f5b:97 tests/16suites reported passed13.163s (2optional live-web skips),
-`final-package-tests.log`. No new package failures. Reader increment pushed immediately.
-Final Mac/iOS app builds now sequential. Another project owns a booted simulator, so ours remains
-Shutdown to honor the one-simulator limit; no borrowing or stopping another session's device.
-
-## Verified live-scroll rejoin — 12:03 EDT
-Additional actual-renderer regression reproduced rejoin being lost during a still-active scroll gesture.
-Keep the same-sentence reveal pending and apply the last configuration when dragging/deceleration ends;
-Mac/iOS parity. Existing paused rejoin stays green.2/2 real AppKit tests passed1.493s after the new case
-failed before the fix. Logs: reader-live-scroll-red.log, reader-live-scroll-green.log; test build succeeded.
-No new package changes after the97-test integrated run. Final app platform builds follow this last UI edit.
-
-## Platform build checkpoint — 12:05 EDT
-Mac app build passed at0095f5b; universal iOS Simulator app build (arm64+x86_64, including Share extension)
-passed ata16df16 without booting a simulator. `final-mac-build.log`, `final-ios-build.log`.
-Independent reader review found deferred rejoin consumed the forced-layout intent before scrolling ended.
-Root is retaining that intent explicitly and adding a changed distant-target regression; then rebuilding.
-
-## Reader review closed — 12:08 EDT
-Persisted deferred rejoin until reveal actually executes. Distant-target regression exposed insufficient
-post-target layout: estimated document height could clamp a far sentence beneath the controls. Forced
-reveals now lay out a bounded viewport beyond the target on Mac/iOS before computing the scroll position.
-All3 actual Mac renderer tests pass2.229s; distant case failed before the fix. Evidence:
-reader-distant-before.log, reader-final-build.log, reader-final-tests.log. Synthetic rendered JPEGs saved
-under state/evidence/ASTRA-1002/ (browsing-away and rejoined-sentence); visually inspected.
-Only final platform rebuilds, state consolidation, PR and resource cleanup remain. No new feature scope.
+## Final real-model verification — 12:13 EDT
+Added opt-in KokoroCoreMLIntegrationTests. Raw Kokoro must throw phonemeSequenceTooLong for60 repetitions
+of2024; production recovery must return non-silent24kHz audio and all60 monotonic word timings within
+clip duration. Test passed16.979s with existing cached models (`real-kokoro-overflow.log`). No cloud speech
+calls. Default test runs skip this model-dependent case unless READALOUD_KOKORO_COREML=1.
+Latest operator timing: start nothing new12:15, wrap12:25; no new implementation is planned.
