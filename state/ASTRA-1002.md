@@ -125,3 +125,9 @@ Keep the same-sentence reveal pending and apply the last configuration when drag
 Mac/iOS parity. Existing paused rejoin stays green.2/2 real AppKit tests passed1.493s after the new case
 failed before the fix. Logs: reader-live-scroll-red.log, reader-live-scroll-green.log; test build succeeded.
 No new package changes after the97-test integrated run. Final app platform builds follow this last UI edit.
+
+## Platform build checkpoint — 12:05 EDT
+Mac app build passed at0095f5b; universal iOS Simulator app build (arm64+x86_64, including Share extension)
+passed ata16df16 without booting a simulator. `final-mac-build.log`, `final-ios-build.log`.
+Independent reader review found deferred rejoin consumed the forced-layout intent before scrolling ended.
+Root is retaining that intent explicitly and adding a changed distant-target regression; then rebuilding.
