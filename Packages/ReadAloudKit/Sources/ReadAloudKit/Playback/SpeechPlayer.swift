@@ -61,6 +61,8 @@ public final class SpeechPlayer {
     private var scheduledEnd: AVAudioFramePosition = 0
     private var nextToSchedule = 0
     private var fetching = false
+    private var failedSentence: Int?
+    private var completedSentence: Int?
     private var lastSampleTime: AVAudioFramePosition = 0
     private var ticker: Timer?
     private var configObserver: NSObjectProtocol?
@@ -115,11 +117,16 @@ public final class SpeechPlayer {
     public func resume() {
         switch state {
         case .paused:
+            if fetching, segments.isEmpty {
+                // The pending request will honor the current intent when it finishes.
+                state = .buffering
+                return
+            }
             if segments.isEmpty, let position {
                 restart(at: position.sentence, word: position.word, autoplay: true)
                 return
             }
-            startEngineIfNeeded()
+            guard startEngineIfNeeded() else { return }
             node.play()
             state = scheduledEnd > lastSampleTime ? .playing : .buffering
             startTicker()
@@ -137,6 +144,9 @@ public final class SpeechPlayer {
         segments.removeAll()
         scheduledEnd = 0
         fetching = false
+        failedSentence = nil
+        completedSentence = nil
+        position = nil
         stopTicker()
         if engine.isRunning { engine.pause() }
         state = .idle
@@ -152,6 +162,9 @@ public final class SpeechPlayer {
         scheduledEnd = 0
         lastSampleTime = 0
         fetching = false
+        failedSentence = nil
+        completedSentence = nil
+        stopTicker()
         nextToSchedule = sentence
         position = Position(sentence: sentence, word: word ?? document?.sentences[sentence].wordIndices.first, clipTime: 0)
         if let position { onPosition?(position) }
@@ -166,8 +179,8 @@ public final class SpeechPlayer {
                 self.fetching = false
                 let offset = self.clipOffset(for: word, in: sentence, clip: clip)
                 self.schedule(clip, sentence: sentence, fromFrame: offset)
-                if autoplay {
-                    self.startEngineIfNeeded()
+                if self.isActive {
+                    guard self.startEngineIfNeeded() else { return }
                     self.node.play()
                     self.state = .playing
                     self.startTicker()
@@ -226,6 +239,11 @@ public final class SpeechPlayer {
     private func segmentFinished(sentence: Int, generation gen: Int) {
         guard gen == generation else { return }
         guard let document else { return }
+        completedSentence = sentence
+        if let failedSentence, segments.last?.sentence == sentence {
+            pauseAtFailure(failedSentence)
+            return
+        }
         if sentence == document.sentences.count - 1, segments.last?.sentence == sentence {
             state = .finished
             stopTicker()
@@ -239,7 +257,7 @@ public final class SpeechPlayer {
 
     /// Keeps `scheduleAhead` seconds queued, fetching clips as needed.
     private func fillAhead() {
-        guard let queue, let document, !fetching, state != .idle, state != .finished else { return }
+        guard let queue, let document, !fetching, failedSentence == nil, state != .idle, state != .finished else { return }
         guard nextToSchedule < document.sentences.count else { return }
         let now = currentSampleTime() ?? lastSampleTime
         let queuedSeconds = Double(scheduledEnd - now) / format.sampleRate
@@ -267,28 +285,40 @@ public final class SpeechPlayer {
     }
 
     private func handleFailure(sentence: Int, error: Error) {
-        if error is CancellationError { return }
+        failedSentence = sentence
         onError?(sentence, error)
-        // Skip the sentence that failed so one bad sentence doesn't stall the article.
-        if let document, sentence + 1 < document.sentences.count, isActive {
-            nextToSchedule = sentence + 1
-            if segments.isEmpty {
-                restart(at: sentence + 1, word: nil, autoplay: true)
-            } else {
-                fillAhead()
-            }
-        } else if segments.isEmpty {
-            state = .paused
-            stopTicker()
+        // Finish audio already scheduled, then stop at the unread sentence. A retry must not skip text.
+        if segments.isEmpty || completedSentence == segments.last?.sentence {
+            pauseAtFailure(sentence)
         }
     }
 
-    private func startEngineIfNeeded() {
-        guard !engine.isRunning else { return }
+    private func pauseAtFailure(_ sentence: Int) {
+        generation += 1
+        node.stop()
+        segments.removeAll()
+        scheduledEnd = 0
+        lastSampleTime = 0
+        fetching = false
+        failedSentence = nil
+        completedSentence = nil
+        stopTicker()
+        position = Position(sentence: sentence, word: document?.sentences[sentence].wordIndices.first, clipTime: 0)
+        if let position { onPosition?(position) }
+        state = .paused
+    }
+
+    @discardableResult
+    private func startEngineIfNeeded() -> Bool {
+        guard !engine.isRunning else { return true }
         do {
             try engine.start()
+            return true
         } catch {
             onError?(position?.sentence ?? 0, error)
+            state = .paused
+            stopTicker()
+            return false
         }
     }
 
@@ -358,7 +388,9 @@ public final class SpeechPlayer {
             fillAhead()
         }
         // Drop segments that finished long ago.
-        if segments.count > 4 { segments.removeFirst(segments.count - 4) }
+        if let current = segments.lastIndex(where: { $0.playerStart <= t }), current > 0 {
+            segments.removeFirst(current)
+        }
         guard let newPosition = position(atSampleTime: t) else { return }
         if newPosition.sentence != position?.sentence || newPosition.word != position?.word {
             position = newPosition

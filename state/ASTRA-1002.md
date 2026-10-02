@@ -26,7 +26,14 @@ contract, run-to-done and simulator lifecycle skills. Current release state is h
 
 ## Done
 - Hydration and isolated worktree.
+- Playback recovery: pending synthesis honors Pause and Resume; failed sentences pause at the unread text
+  after queued audio finishes; retry remains possible without automatic request storms. Stop discards stale
+  positions/results, engine-start failure stays paused, and short-sentence timing records survive until played.
+- Evidence: baseline 54/54 tests. New control against original code failed pause, final failure (300 retries
+  in 8 s), and first-failure retention. Fixed playback suites passed 12/12, then expanded recovery suite
+  passed 6/6 including stop-during-synthesis and real audio-clock coverage of all 12 short sentences.
+  Logs: `baseline-tests.log`, `playback-red.log`, `playback-green.log`, `playback-recovery.log` in leased DD.
 
 ## Next
-Run baseline package tests using the leased external scratch directory; write failure-reproducing transport
-regressions, implement and verify, then commit the first coherent increment. Continue to next selected gap.
+Audit ReadingSession completion/resume and timing observation next. Prepare Mac/iOS builds and isolated
+simulator for integration checks. Extraction fidelity follows transport/session correctness.
