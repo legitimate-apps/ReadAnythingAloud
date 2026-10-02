@@ -19,22 +19,32 @@
   }
 
   function bestImageSource(img) {
-    const candidates = [];
-    const srcset = img.getAttribute("srcset") || img.getAttribute("data-srcset");
-    if (srcset) {
+    function fromSrcset(srcset) {
+      if (!srcset) return null;
+      const candidates = [];
       for (const part of srcset.split(",")) {
         const [u, d] = part.trim().split(/\s+/);
         const w = d && d.endsWith("w") ? parseInt(d) : d && d.endsWith("x") ? parseFloat(d) * 1000 : 1;
-        if (u) candidates.push({ u, w });
+        if (u && !u.startsWith("data:") && Number.isFinite(w) && w > 0) candidates.push({ u, w });
       }
       candidates.sort((a, b) => b.w - a.w);
-      // Prefer a reasonably sized rendition over a huge original.
       const good = candidates.find(c => c.w <= 1600) || candidates[candidates.length - 1];
-      if (good) return absolute(good.u);
+      return good ? absolute(good.u) : null;
     }
-    const src = img.getAttribute("src") || img.getAttribute("data-src") || img.getAttribute("data-lazy-src") ||
-      img.getAttribute("data-original");
-    if (src && !src.startsWith("data:")) return absolute(src);
+    // Off-screen extraction blocks image requests, so lazy loaders may never replace their placeholders.
+    const picture = img.closest("picture");
+    const sources = picture ? Array.from(picture.querySelectorAll("source")) : [];
+    for (const source of [img, ...sources]) {
+      const resolved = fromSrcset(source.getAttribute("data-srcset")) || fromSrcset(source.getAttribute("srcset"));
+      if (resolved) return resolved;
+    }
+    for (const name of ["data-src", "data-lazy-src", "data-original", "src"]) {
+      const src = img.getAttribute(name);
+      if (src && !src.startsWith("data:")) {
+        const resolved = absolute(src);
+        if (resolved) return resolved;
+      }
+    }
     return null;
   }
 
@@ -96,6 +106,15 @@
     if (el.getAttribute("aria-hidden") === "true") return true;
     const style = el.getAttribute("style") || "";
     return /display\s*:\s*none|visibility\s*:\s*hidden/i.test(style);
+  }
+
+  // textContent includes hidden labels and scripts; table narration must obey the same exclusions as prose.
+  function visibleText(node) {
+    if (node.nodeType === Node.TEXT_NODE) return node.nodeValue || "";
+    if (node.nodeType !== Node.ELEMENT_NODE || SKIP_TAGS.has(node.tagName) || isHidden(node) || isFootnoteRef(node)) return "";
+    if (node.tagName === "BR") return " ";
+    const text = Array.from(node.childNodes).map(visibleText).join("");
+    return BLOCK_TAGS.has(node.tagName) ? " " + text + " " : text;
   }
 
   Walker.prototype.inline = function (node, style) {
@@ -176,12 +195,17 @@
       case "UL": case "OL": {
         this.flush();
         const ordered = tag === "OL";
-        let number = parseInt(el.getAttribute("start") || "1") || 1;
+        const items = Array.from(el.children).filter(child => child.tagName.toUpperCase() === "LI");
+        const step = ordered && el.hasAttribute("reversed") ? -1 : 1;
+        const start = parseInt(el.getAttribute("start"));
+        let number = Number.isFinite(start) ? start : step < 0 ? items.length : 1;
         this.listDepth++;
         for (const li of Array.from(el.children)) {
           if (li.tagName.toUpperCase() !== "LI") { this.element(li, style); continue; }
+          const explicit = parseInt(li.getAttribute("value"));
+          if (ordered && Number.isFinite(explicit)) number = explicit;
           this.listItem(li, ordered, number, style);
-          number++;
+          number += step;
         }
         this.listDepth--;
         return;
@@ -201,8 +225,20 @@
       }
       case "TABLE": {
         this.flush();
+        const caption = Array.from(el.children).find(c => c.tagName === "CAPTION");
+        if (caption && !isHidden(caption)) {
+          this.begin({ k: "caption" });
+          this.inline(caption, style);
+          this.flush();
+        }
         for (const row of Array.from(el.querySelectorAll("tr"))) {
-          const cells = Array.from(row.children).map(c => c.textContent.replace(/\s+/g, " ").trim()).filter(Boolean);
+          if (row.closest("table") !== el) continue;
+          let hidden = false;
+          for (let parent = row; parent && parent !== el; parent = parent.parentElement) {
+            if (isHidden(parent)) { hidden = true; break; }
+          }
+          if (hidden) continue;
+          const cells = Array.from(row.children).map(c => visibleText(c).replace(/\s+/g, " ").trim()).filter(Boolean);
           if (cells.length) this.blocks.push({ k: "p", runs: [{ t: cells.join(" · ") }] });
         }
         return;
@@ -235,6 +271,7 @@
   };
 
   Walker.prototype.listItem = function (li, ordered, number, style) {
+    if (isHidden(li)) return;
     this.begin({ k: "li", ordered, number, depth: Math.max(0, this.listDepth - 1) });
     for (const child of Array.from(li.childNodes)) {
       if (child.nodeType === Node.TEXT_NODE) {
@@ -242,6 +279,7 @@
         this.text(child.nodeValue, style);
       } else if (child.nodeType === Node.ELEMENT_NODE) {
         const t = child.tagName.toUpperCase();
+        if (isHidden(child)) continue;
         if (t === "UL" || t === "OL") {
           this.flush();
           this.element(child, style);
@@ -343,10 +381,18 @@
   }
 
   function countWords(blocks) {
+    // Segment the assembled text, not each styling run; CJK words have no separating spaces and an
+    // emphasized fragment inside one English word must not be counted as a separate word.
+    const segmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, { granularity: "word" }) : null;
     let n = 0;
     for (const b of blocks) {
       if (!b.runs || b.k === "caption") continue;
-      for (const r of b.runs) n += (r.t.match(/[\p{L}\p{N}]+/gu) || []).length;
+      const text = b.runs.map(r => r.t).join("");
+      if (segmenter) {
+        for (const part of segmenter.segment(text)) if (part.isWordLike) n++;
+      } else {
+        n += (text.match(/[\p{L}\p{N}]+/gu) || []).length;
+      }
     }
     return n;
   }

@@ -25,6 +25,7 @@ public final class ReadingSession {
     public var rate: Float {
         get { playbackRate }
         set {
+            guard newValue.isFinite else { return }
             let clamped = min(max(newValue, 0.5), 3.5)
             playbackRate = clamped
             player.rate = clamped
@@ -33,13 +34,17 @@ public final class ReadingSession {
         }
     }
     private var playbackRate: Float
+    /// Observable media time; SpeechPlayer itself deliberately does not participate in Observation.
+    private var clipTime: Double = 0
+    @ObservationIgnored private var queueGeneration = 0
+    @ObservationIgnored private var isClosed = false
+    @ObservationIgnored private var interruptedPlayIntent: Bool?
 
     @ObservationIgnored private let player = SpeechPlayer()
     @ObservationIgnored private var queue: SynthesisQueue?
     @ObservationIgnored private let library: LibraryStore?
     @ObservationIgnored private let settings: VoiceSettings
     @ObservationIgnored private let nowPlaying = NowPlayingController()
-    @ObservationIgnored private var lastSavedSentence = -1
     @ObservationIgnored private var lastSaveTime = Date.distantPast
     @ObservationIgnored private var voiceTask: Task<Void, Never>?
     /// Replaces the settings' engine (tests).
@@ -59,14 +64,15 @@ public final class ReadingSession {
         self.document = DocumentBuilder.build(article)
         self.library = library
         self.settings = settings
-        self.playbackRate = min(max(settings.rate, 0.5), 3.5)
+        self.playbackRate = settings.rate.isFinite ? min(max(settings.rate, 0.5), 3.5) : 1
         self.voice = settings.voice(forLanguage: document.language)
         self.durations = Array(repeating: nil, count: document.sentences.count)
 
         if let progress = library?.item(article.id)?.progress, document.sentences.indices.contains(progress.sentence),
-           progress.fraction < 0.98 {
+           progress.fraction < 1 {
             sentence = progress.sentence
-            word = progress.word ?? document.sentences[progress.sentence].wordIndices.first
+            let words = document.sentences[progress.sentence].wordIndices
+            word = progress.word.flatMap { words.contains($0) ? $0 : nil } ?? words.first
         } else {
             word = document.sentences.first?.wordIndices.first
         }
@@ -75,18 +81,21 @@ public final class ReadingSession {
         player.onStateChange = { [weak self] state in self?.playerStateChanged(state) }
         player.onPosition = { [weak self] position in self?.playerMoved(position) }
         player.onError = { [weak self] sentence, error in
-            self?.errorMessage = "Couldn't voice a sentence: \(error.localizedDescription)"
-            _ = sentence
+            self?.errorMessage = "Couldn't read sentence \(sentence + 1): \(error.localizedDescription) Press Play to retry or choose another voice."
         }
         nowPlaying.attach(self)
         rebuildQueue()
+        if (library?.item(article.id)?.progress?.fraction ?? 0) >= 1 {
+            state = .finished
+            nowPlaying.update(from: self)
+        }
     }
 
     // MARK: - Derived timing
 
     private func estimatedDuration(_ index: Int) -> Double {
-        if let d = durations[index] { return d }
-        return Double(document.sentences[index].range.length) * secondsPerUnit + player.sentencePause
+        (durations[index] ?? Double(document.sentences[index].range.length) * secondsPerUnit)
+            + player.pauseAfter(sentence: index)
     }
 
     /// Estimated total listening time at 1×.
@@ -97,8 +106,15 @@ public final class ReadingSession {
     /// Estimated media time at the playhead (1×).
     public var elapsed: Double {
         guard !document.sentences.isEmpty else { return 0 }
+        if state == .finished { return totalDuration }
         let before = (0..<min(sentence, document.sentences.count)).reduce(0) { $0 + estimatedDuration($1) }
-        return before + (player.position?.sentence == sentence ? player.position?.clipTime ?? 0 : 0)
+        if let word, document.words.indices.contains(word), clipTime == 0 {
+            let s = document.sentences[sentence]
+            let offset = document.words[word].range.location - s.range.location
+            let duration = durations[sentence] ?? Double(s.range.length) * secondsPerUnit
+            return before + duration * Double(max(0, offset)) / Double(max(1, s.range.length))
+        }
+        return before + clipTime
     }
 
     public var fraction: Double {
@@ -127,8 +143,9 @@ public final class ReadingSession {
     }
 
     public func play() {
+        interruptedPlayIntent = nil
+        guard !isClosed, !isPlaying, !document.sentences.isEmpty else { return }
         errorMessage = nil
-        guard !document.sentences.isEmpty else { return }
         switch state {
         case .paused where player.position != nil:
             player.resume()
@@ -140,6 +157,7 @@ public final class ReadingSession {
     }
 
     public func pause() {
+        interruptedPlayIntent = nil
         if preparingMessage != nil {
             // Pausing while the voice loads cancels the pending start; the load itself carries on.
             voiceTask?.cancel()
@@ -149,6 +167,21 @@ public final class ReadingSession {
         }
         player.pause()
         saveProgress(force: true)
+    }
+
+    /// System interruptions may resume only the playback they actually interrupted. Keeping the
+    /// intent on this session prevents an interruption from starting a newly opened article.
+    public func interruptionBegan() {
+        guard !isClosed, interruptedPlayIntent == nil else { return }
+        let shouldResume = isPlaying
+        pause()
+        interruptedPlayIntent = shouldResume
+    }
+
+    public func interruptionEnded(shouldResume: Bool) {
+        let wantedPlayback = interruptedPlayIntent == true
+        interruptedPlayIntent = nil
+        if shouldResume, wantedPlayback { play() }
     }
 
     public func skipSentence(_ delta: Int) {
@@ -186,6 +219,7 @@ public final class ReadingSession {
     public func jump(sentence target: Int, word targetWord: Int?) {
         guard document.sentences.indices.contains(target) else { return }
         sentence = target
+        clipTime = 0
         word = targetWord ?? document.sentences[target].wordIndices.first
         jumpCounter += 1
         if preparingMessage != nil {
@@ -228,17 +262,34 @@ public final class ReadingSession {
     public func setVoice(_ newVoice: VoiceID) {
         guard newVoice != voice else { return }
         let wasPlaying = isPlaying
+        let wasFinished = state == .finished
+        voiceTask?.cancel()
+        voiceTask = nil
+        preparingMessage = nil
+        errorMessage = nil
+        clipTime = 0
         voice = newVoice
         settings.preferredVoice = newVoice
         durations = Array(repeating: nil, count: document.sentences.count)
         rebuildQueue()
-        if wasPlaying { start(sentence: sentence, word: word) }
+        if wasFinished {
+            state = .finished
+            nowPlaying.update(from: self)
+        } else if wasPlaying {
+            start(sentence: sentence, word: word)
+        }
     }
 
     /// Stops playback and saves progress. Call when the reader closes.
     public func close() {
+        guard !isClosed else { return }
         saveProgress(force: true)
+        isClosed = true
+        interruptedPlayIntent = nil
+        queueGeneration += 1
         voiceTask?.cancel()
+        voiceTask = nil
+        preparingMessage = nil
         player.stop()
         Task { [queue] in await queue?.cancel() }
         nowPlaying.detach(self)
@@ -247,6 +298,8 @@ public final class ReadingSession {
     // MARK: - Internals
 
     private func rebuildQueue() {
+        queueGeneration += 1
+        let generation = queueGeneration
         let old = queue
         Task { await old?.cancel() }
         #if os(macOS)
@@ -258,7 +311,10 @@ public final class ReadingSession {
                                pace: 1, lookahead: lookahead)
         Task { [weak self] in
             await q.setClipObserver { index, duration in
-                Task { @MainActor in self?.clipReady(index, duration: duration) }
+                Task { @MainActor in
+                    guard let self, self.queueGeneration == generation, !self.isClosed else { return }
+                    self.clipReady(index, duration: duration)
+                }
             }
         }
         queue = q
@@ -267,8 +323,7 @@ public final class ReadingSession {
 
     private func clipReady(_ index: Int, duration: Double) {
         guard durations.indices.contains(index) else { return }
-        let pause = document.sentences[index].endsBlock ? player.blockPause : player.sentencePause
-        durations[index] = duration + pause
+        durations[index] = duration
         let known = durations.indices.compactMap { i in durations[i].map { ($0, document.sentences[i].range.length) } }
         let seconds = known.reduce(0) { $0 + $1.0 }
         let units = known.reduce(0) { $0 + $1.1 }
@@ -277,6 +332,8 @@ public final class ReadingSession {
 
     private func start(sentence target: Int, word targetWord: Int?) {
         voiceTask?.cancel()
+        voiceTask = nil
+        preparingMessage = nil
         if voice.engine == .kokoro, settings.kokoroState != .ready {
             preparingMessage = VoiceSettings.isKokoroDownloaded
                 ? "Loading the natural voice…"
@@ -311,18 +368,20 @@ public final class ReadingSession {
     }
 
     private func playerMoved(_ position: SpeechPlayer.Position) {
-        if position.sentence != sentence { saveProgress(force: false) }
+        let changedSentence = position.sentence != sentence
         sentence = position.sentence
         word = position.word
-        if position.sentence != lastSavedSentence { nowPlaying.update(from: self) }
+        clipTime = position.clipTime
+        saveProgress(force: false)
+        if changedSentence { nowPlaying.update(from: self) }
     }
 
     private func saveProgress(force: Bool, finished: Bool = false) {
-        guard let library else { return }
+        guard let library, !isClosed else { return }
+        let finished = finished || state == .finished
         let now = Date()
         guard force || now.timeIntervalSince(lastSaveTime) > 4 else { return }
         lastSaveTime = now
-        lastSavedSentence = sentence
         library.updateProgress(article.id, ReadingProgress(sentence: finished ? 0 : sentence,
                                                            word: finished ? nil : word,
                                                            fraction: finished ? 1 : fraction))

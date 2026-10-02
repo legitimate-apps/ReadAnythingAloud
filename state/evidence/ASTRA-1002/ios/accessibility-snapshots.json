@@ -1,0 +1,178 @@
+{
+  "simulator": "iPhone 17 Pro, iOS 26.5",
+  "voice": {
+    "engine": "apple",
+    "identifier": "com.apple.voice.super-compact.en-AU.Karen"
+  },
+  "snapshots": [
+    {
+      "name": "browsingSnapshot",
+      "type": "runtime-snapshot",
+      "rs": "1",
+      "screenHash": "03hnmfm",
+      "seq": 15,
+      "count": 89,
+      "targets": [
+        "e12|tap|button|Library||BackButton",
+        "e14|tap|button|Appearance||",
+        "e68|tap|button|Back to reading||reader.backToReading",
+        "e74|tap|button|Speed 1×||player.speed",
+        "e75|tap|button|||",
+        "e77|tap|button|Previous paragraph||player.previousParagraph",
+        "e78|tap|button|Previous sentence||player.previousSentence",
+        "e79|tap|button|Pause||player.playPause",
+        "e80|tap|button|Next sentence||player.nextSentence",
+        "e81|tap|button|Next paragraph||player.nextParagraph",
+        "e82|tap|button|Voice||player.voice"
+      ],
+      "scroll": [
+        "e1|swipe|application|ReadAnythingAloud||"
+      ],
+      "text": [
+        "e42|text|text|Paragraph 3. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e43|text|text|Paragraph 4. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e44|text|text|Paragraph 5. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e45|text|text|Paragraph 6. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e70|text|text|Back to reading||",
+        "e72|text|text|0:26||",
+        "e73|text|text|-5:20||",
+        "e76|text|text|1×||",
+        "e46|text|text|Paragraph 7. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||"
+      ],
+      "udid": "6609292F-1E60-4898-8329-797B6967AE0B"
+    },
+    {
+      "name": "rejoinedSnapshot",
+      "type": "runtime-snapshot",
+      "rs": "1",
+      "screenHash": "17fmi0m",
+      "seq": 16,
+      "count": 86,
+      "targets": [
+        "e12|tap|button|Library||BackButton",
+        "e14|tap|button|Appearance||",
+        "e71|tap|button|Speed 1×||player.speed",
+        "e72|tap|button|||",
+        "e74|tap|button|Previous paragraph||player.previousParagraph",
+        "e75|tap|button|Previous sentence||player.previousSentence",
+        "e76|tap|button|Pause||player.playPause",
+        "e77|tap|button|Next sentence||player.nextSentence",
+        "e78|tap|button|Next paragraph||player.nextParagraph",
+        "e79|tap|button|Voice||player.voice"
+      ],
+      "scroll": [
+        "e1|swipe|application|ReadAnythingAloud||"
+      ],
+      "text": [
+        "e40|text|text|Paragraph 1. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e41|text|text|Paragraph 2. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e42|text|text|Paragraph 3. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e43|text|text|Paragraph 4. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e69|text|text|0:39||",
+        "e70|text|text|-5:07||",
+        "e44|text|text|Paragraph 5. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e73|text|text|1×||"
+      ],
+      "udid": "6609292F-1E60-4898-8329-797B6967AE0B"
+    },
+    {
+      "name": "pausedSnapshot",
+      "type": "runtime-snapshot",
+      "rs": "1",
+      "screenHash": "0m3voyg",
+      "seq": 18,
+      "count": 83,
+      "targets": [
+        "e12|tap|button|Library||BackButton",
+        "e14|tap|button|Appearance||",
+        "e71|tap|button|Speed 1×||player.speed",
+        "e72|tap|button|||",
+        "e74|tap|button|Previous paragraph||player.previousParagraph",
+        "e75|tap|button|Previous sentence||player.previousSentence",
+        "e76|tap|button|Play||player.playPause",
+        "e77|tap|button|Next sentence||player.nextSentence",
+        "e78|tap|button|Next paragraph||player.nextParagraph",
+        "e79|tap|button|Voice||player.voice"
+      ],
+      "scroll": [
+        "e1|swipe|application|ReadAnythingAloud||"
+      ],
+      "text": [
+        "e46|text|text|Paragraph 7. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e47|text|text|Paragraph 8. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e48|text|text|Paragraph 9. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e49|text|text|Paragraph 10. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e69|text|text|1:53||",
+        "e70|text|text|-3:57||",
+        "e73|text|text|1×||"
+      ],
+      "udid": "6609292F-1E60-4898-8329-797B6967AE0B"
+    },
+    {
+      "name": "pausedLaterSnapshot",
+      "type": "runtime-snapshot",
+      "rs": "1",
+      "screenHash": "0m3voyg",
+      "seq": 19,
+      "count": 83,
+      "targets": [
+        "e12|tap|button|Library||BackButton",
+        "e14|tap|button|Appearance||",
+        "e71|tap|button|Speed 1×||player.speed",
+        "e72|tap|button|||",
+        "e74|tap|button|Previous paragraph||player.previousParagraph",
+        "e75|tap|button|Previous sentence||player.previousSentence",
+        "e76|tap|button|Play||player.playPause",
+        "e77|tap|button|Next sentence||player.nextSentence",
+        "e78|tap|button|Next paragraph||player.nextParagraph",
+        "e79|tap|button|Voice||player.voice"
+      ],
+      "scroll": [
+        "e1|swipe|application|ReadAnythingAloud||"
+      ],
+      "text": [
+        "e46|text|text|Paragraph 7. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e47|text|text|Paragraph 8. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e48|text|text|Paragraph 9. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e49|text|text|Paragraph 10. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e69|text|text|1:53||",
+        "e70|text|text|-3:57||",
+        "e73|text|text|1×||"
+      ],
+      "udid": "6609292F-1E60-4898-8329-797B6967AE0B"
+    },
+    {
+      "name": "resumedSnapshot",
+      "type": "runtime-snapshot",
+      "rs": "1",
+      "screenHash": "0d8yy69",
+      "seq": 20,
+      "count": 83,
+      "targets": [
+        "e12|tap|button|Library||BackButton",
+        "e14|tap|button|Appearance||",
+        "e71|tap|button|Speed 1×||player.speed",
+        "e72|tap|button|||",
+        "e74|tap|button|Previous paragraph||player.previousParagraph",
+        "e75|tap|button|Previous sentence||player.previousSentence",
+        "e76|tap|button|Pause||player.playPause",
+        "e77|tap|button|Next sentence||player.nextSentence",
+        "e78|tap|button|Next paragraph||player.nextParagraph",
+        "e79|tap|button|Voice||player.voice"
+      ],
+      "scroll": [
+        "e1|swipe|application|ReadAnythingAloud||"
+      ],
+      "text": [
+        "e46|text|text|Paragraph 7. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e47|text|text|Paragraph 8. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e48|text|text|Paragraph 9. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e49|text|text|Paragraph 10. The listener can pause the Apple voice while the next sentence is being prepared. Reading continues at the right word when playback resumes. Browse ahead to another paragraph, then return to the spoken sentence using Back to reading.||",
+        "e69|text|text|1:56||",
+        "e70|text|text|-3:54||",
+        "e73|text|text|1×||"
+      ],
+      "udid": "6609292F-1E60-4898-8329-797B6967AE0B"
+    }
+  ]
+}

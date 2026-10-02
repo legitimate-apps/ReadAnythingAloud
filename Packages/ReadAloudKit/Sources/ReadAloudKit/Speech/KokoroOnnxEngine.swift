@@ -123,6 +123,13 @@ public actor KokoroOnnxEngine: SpeechEngine {
     // MARK: - Synthesis
 
     public func synthesize(_ request: SynthesisRequest) async throws -> SynthesizedClip {
+        try await KokoroChunking.synthesize(request) { chunk in
+            try await self.synthesizeChunk(chunk)
+        }
+    }
+
+    private func synthesizeChunk(_ request: SynthesisRequest) async throws -> SynthesizedClip {
+        try Task.checkCancellation()
         let speakable = request.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !speakable.isEmpty else {
             return SynthesizedClip(samples: [], sampleRate: Self.sampleRate,

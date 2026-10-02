@@ -126,3 +126,25 @@ targets:
         PRODUCT_NAME: ReadAnythingAloudShare
         TARGETED_DEVICE_FAMILY: "1,2"
         APPLICATION_EXTENSION_API_ONLY: YES
+  ReaderTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/ReaderTests
+      - path: App/Reader/ReaderTextView.swift
+      - path: App/Reader/ReaderStyle.swift
+      - path: App/Reader/ArticleTextBuilder.swift
+      - path: App/Support/RemoteImage.swift
+    dependencies:
+      - package: ReadAloudKit
+        product: ReadAloudKit
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  ReaderTests:
+    build:
+      targets:
+        ReaderTests: all
+    test:
+      targets: [ReaderTests]

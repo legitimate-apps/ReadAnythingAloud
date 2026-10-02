@@ -1,6 +1,16 @@
 # STATE — ReadAnythingAloud
 
-Updated: 2026-09-26
+Updated: 2026-10-02
+
+## Development update — 2026-10-02
+Core-experience reliability work is complete on `astra/core-experience-1002`, in [PR #1](https://github.com/legitimate-apps/ReadAnythingAloud/pull/1). This is
+not a release. Playback intent, failure recovery, completion/resume, interruptions, cancelled queues,
+extraction fidelity/cancellation, multilingual segmentation, long-text Kokoro recovery and reader rejoin
+are covered by regressions. Both app platforms build; Mac reader viewport tests and real cached Kokoro
+overflow synthesis pass. See [the run state](state/ASTRA-1002.md) for evidence, limits and the exact next step.
+The bounded follow-up also verified Apple-voice buffering Play/Pause/Resume and Back to reading on one
+iPhone17Pro/iOS26.5 simulator; [screen evidence](state/evidence/ASTRA-1002/ios/README.md) is committed.
+The September device and release observations below remain historical.
 
 ## Decisions (operator, 2026-09-25)
 - Build our own (no forkable 90% OSS exists — research/oss-landscape.md).
@@ -44,6 +54,7 @@ Updated: 2026-09-26
   file URLs (files are read and passed as HTML); real web pages extract in ~1 s on the iPad.
 
 ## Next action
-1. Install iOS build 3 from TestFlight on the iPad; re-check Kokoro in the release build (stub removed).
-2. iPad memory: footprint growth over a long session with the current build.
-3. ElevenLabs tiny test with the vault key.
+1. Review the core-experience PR, then verify physical iOS interruption delivery, completion followed by
+   voice switch/reopen, and iPad layout. The bounded iPhone simulator controls/follow checks are complete.
+2. Check long numeric/unpunctuated passages on iOS Kokoro and memory growth during extended playback.
+3. Revisit release/TestFlight validation and optional ElevenLabs testing in a separately authorized run.

@@ -13,6 +13,7 @@ public actor SynthesisQueue {
     private var clips: [Int: SynthesizedClip] = [:]
     private var inFlight: [Int: Task<SynthesizedClip, Error>] = [:]
     private var failures: [Int: Error] = [:]
+    private var isCancelled = false
     private var playhead = 0
     private var worker: Task<Void, Never>?
     /// Called (off the main actor) whenever a sentence clip becomes available, with its duration.
@@ -29,17 +30,24 @@ public actor SynthesisQueue {
     }
 
     public func setClipObserver(_ observer: @escaping @Sendable (Int, Double) -> Void) {
+        guard !isCancelled else { return }
         onClip = observer
     }
 
     /// The clip for a sentence, synthesizing it now if needed.
     public func clip(for index: Int) async throws -> SynthesizedClip {
+        try checkCancellation()
         if let clip = clips[index] { return clip }
-        if let task = inFlight[index] { return try await task.value }
+        if let task = inFlight[index] {
+            let clip = try await task.value
+            try checkCancellation()
+            return clip
+        }
         let task = Task { try await self.produce(index) }
         inFlight[index] = task
         do {
             let clip = try await task.value
+            try checkCancellation()
             inFlight[index] = nil
             return clip
         } catch {
@@ -53,6 +61,7 @@ public actor SynthesisQueue {
 
     /// Moves the render-ahead window to start at `index` and (re)starts the background worker.
     public func setPlayhead(_ index: Int) {
+        guard !isCancelled else { return }
         playhead = index
         for key in failures.keys where key >= index { failures[key] = nil }
         // Free memory far behind the playhead; it stays on disk.
@@ -60,11 +69,16 @@ public actor SynthesisQueue {
         if worker == nil { startWorker() }
     }
 
+    /// Discards this queue permanently. A new document or voice must use a new queue.
     public func cancel() {
+        isCancelled = true
         worker?.cancel()
         worker = nil
         for task in inFlight.values { task.cancel() }
         inFlight.removeAll()
+        clips.removeAll()
+        failures.removeAll()
+        onClip = nil
     }
 
     private func startWorker() {
@@ -93,20 +107,29 @@ public actor SynthesisQueue {
         return (playhead..<end).first { clips[$0] == nil && failures[$0] == nil && inFlight[$0] == nil }
     }
 
+    private func checkCancellation() throws {
+        guard !isCancelled else { throw CancellationError() }
+        try Task.checkCancellation()
+    }
+
     private func produce(_ index: Int) async throws -> SynthesizedClip {
+        try checkCancellation()
         let sentence = document.sentences[index]
         let key = ClipCache.key(text: sentence.speechText, voice: voice, modelRevision: engine.modelRevision, pace: pace)
-        if let cached = await cache.clip(for: key), cached.wordTimings.count == sentence.wordIndices.count {
+        let cached = await cache.clip(for: key)
+        try checkCancellation()
+        if let cached, cached.wordTimings.count == sentence.wordIndices.count {
             store(cached, at: index)
             return cached
         }
         let request = SynthesisRequest(text: sentence.speechText, wordRanges: document.localWordRanges(ofSentence: index),
                                        voice: voice, pace: pace, language: document.language)
         var clip = try await engine.synthesize(request)
-        try Task.checkCancellation()
+        try checkCancellation()
         clip = CanonicalAudio.canonicalize(clip)
         clip = Self.trimSilence(clip)
         await cache.store(clip, for: key)
+        try checkCancellation()
         store(clip, at: index)
         return clip
     }
