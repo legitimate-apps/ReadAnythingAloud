@@ -224,38 +224,37 @@ public enum DocumentBuilder {
         }
     }
 
-    /// Splits sentences longer than ~320 characters at clause punctuation so the first audio arrives quickly and
-    /// highlighting granularity stays useful on run-on sentences.
+    /// Bound synthesis units even when prose has no clause punctuation. Prefer a nearby clause, then a
+    /// whitespace boundary, and finally a grapheme boundary for very long tokens or unspaced scripts.
     static func splitOverlong(_ ranges: [Range<String.Index>], in content: String) -> [Range<String.Index>] {
         let limit = 320
         var out: [Range<String.Index>] = []
         for range in ranges {
-            var pending = range
-            while content.distance(from: pending.lowerBound, to: pending.upperBound) > limit {
-                let window = content[pending]
-                let target = content.index(pending.lowerBound, offsetBy: limit / 2)
-                var best: String.Index?
+            var lower = range.lowerBound
+            while let ceiling = content.index(lower, offsetBy: limit, limitedBy: range.upperBound),
+                  ceiling < range.upperBound {
+                let window = content[lower..<ceiling]
+                let target = content.index(lower, offsetBy: limit / 2)
+                var clause: String.Index?
                 var bestDistance = Int.max
                 for separator in ["; ", ": ", " — ", ", "] {
                     var searchStart = window.startIndex
                     while let found = window[searchStart...].range(of: separator) {
                         let cut = found.upperBound
-                        let d = abs(content.distance(from: target, to: cut))
-                        let minPiece = 60
-                        if content.distance(from: pending.lowerBound, to: cut) > minPiece,
-                           content.distance(from: cut, to: pending.upperBound) > minPiece, d < bestDistance {
-                            best = cut
-                            bestDistance = d
+                        let distance = abs(content.distance(from: target, to: cut))
+                        if content.distance(from: lower, to: cut) >= 60, distance < bestDistance {
+                            clause = cut
+                            bestDistance = distance
                         }
-                        searchStart = found.upperBound
+                        searchStart = cut
                     }
-                    if best != nil { break }
                 }
-                guard let cut = best else { break }
-                out.append(pending.lowerBound..<cut)
-                pending = cut..<pending.upperBound
+                let whitespace = window.lastIndex(where: \.isWhitespace).map { content.index(after: $0) }
+                let cut = clause ?? whitespace ?? ceiling
+                out.append(lower..<cut)
+                lower = cut
             }
-            out.append(pending)
+            out.append(lower..<range.upperBound)
         }
         return out
     }

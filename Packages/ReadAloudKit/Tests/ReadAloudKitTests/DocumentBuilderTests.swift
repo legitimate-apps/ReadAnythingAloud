@@ -109,6 +109,45 @@ import Testing
         #expect(rejoined == long)
     }
 
+    @Test func unpunctuatedParagraphsRemainBoundedAndComplete() {
+        let text = Array(repeating: "café naïve reader", count: 100).joined(separator: " ")
+        let doc = DocumentBuilder.build(article([Block(kind: .paragraph, text: text)], title: ""))
+        #expect(doc.sentences.count > 3)
+        #expect(doc.sentences.allSatisfy { $0.speechText.count <= 320 })
+        #expect(doc.sentences.map(\.speechText).joined(separator: " ") == text)
+        #expect(doc.words.map { doc.string(for: $0.range) } == text.split(separator: " ").map(String.init))
+        #expect(doc.sentences.filter(\.endsBlock).count == 1)
+        #expect(doc.sentences.last?.endsBlock == true)
+    }
+
+    @Test func distantPunctuationCannotCreateAnOverlongChunk() {
+        let text = String(repeating: "word ", count: 200) + "; " + String(repeating: "tail ", count: 100)
+        let chunks = DocumentBuilder.splitOverlong([text.startIndex..<text.endIndex], in: text)
+        #expect(chunks.allSatisfy { text[$0].count <= 320 })
+        #expect(chunks.map { String(text[$0]) }.joined() == text)
+    }
+
+    @Test func hardSplitsPreserveExtendedGraphemesAndUTF16WordRanges() {
+        let text = String(repeating: "e\u{301}👩🏽‍🚀漢", count: 350)
+        let chunks = DocumentBuilder.splitOverlong([text.startIndex..<text.endIndex], in: text)
+        #expect(chunks.count > 1)
+        #expect(chunks.allSatisfy { text[$0].count <= 320 })
+        #expect(chunks.map { String(text[$0]) }.joined() == text)
+        let boundaries = Set(text.indices).union([text.endIndex])
+        #expect(chunks.allSatisfy { boundaries.contains($0.lowerBound) && boundaries.contains($0.upperBound) })
+        let doc = DocumentBuilder.build(article([Block(kind: .paragraph, text: text)], title: ""))
+        for sentence in doc.sentences {
+            #expect(doc.string(for: sentence.range) == sentence.speechText)
+            #expect(sentence.range.length == sentence.speechText.utf16.count)
+            for wordIndex in sentence.wordIndices {
+                let word = doc.words[wordIndex]
+                #expect(word.range.location >= sentence.range.location)
+                #expect(word.range.upperBound <= sentence.range.upperBound)
+                #expect(!doc.string(for: word.range).isEmpty)
+            }
+        }
+    }
+
     @Test func lookupHelpers() {
         let doc = DocumentBuilder.build(article([
             Block(kind: .paragraph, text: "One two. Three four."),
