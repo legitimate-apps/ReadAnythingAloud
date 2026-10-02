@@ -2,7 +2,8 @@
 
 ## Delivery
 - Integration branch: `astra/core-experience-1002`, isolated worktree `ReadAloud-astra-1002`, base `121e5c4`.
-- Implementation complete through `de3b12c`; final verification passed; PR delivery in progress at 12:13 EDT.
+- Finished at 12:16 EDT. Code through `de3b12c`, real-model verification in `7390879`; all changes committed and pushed.
+- PR: [#1 — Make extraction, speech playback and reader follow reliable](https://github.com/legitimate-apps/ReadAnythingAloud/pull/1), open for review; not merged.
 - Main checkout remains clean at `121e5c4`. No merge, release, store submission, spending or third-party messages.
 - Commits use legitimate-apps and `Co-Authored-By: Codex <noreply@openai.com>`.
 - Repository has no CI workflow; verification below is local. Never add a self-hosted runner to this public repo.
@@ -43,7 +44,7 @@ work. Priority was the core promise: readable content, reliable speech, synchron
   [rejoined sentence](evidence/ASTRA-1002/rejoined-sentence.jpg). The rejoined sentence highlight was inspected.
 
 ## Verification evidence
-All build/test artifacts are in external leased DerivedData. Central directory:
+Builds and tests used leased external DerivedData; leases are now released and logs remain cached. Central directory:
 `/Volumes/Crucial X8/DerivedData/readaloud-astra-1002`.
 
 | Check | Observed result | Log/artifact |
@@ -107,4 +108,4 @@ Added opt-in KokoroCoreMLIntegrationTests. Raw Kokoro must throw phonemeSequence
 of 2024; production recovery must return non-silent 24 kHz audio and all 60 monotonic word timings within
 clip duration. Test passed in 16.979s with existing cached models (`real-kokoro-overflow.log`). No cloud speech
 calls. Default test runs skip this model-dependent case unless READALOUD_KOKORO_COREML=1.
-Latest operator timing: start nothing new work after 12:15, wrap at 12:25; no new implementation is planned.
+Latest operator timing: start nothing new after 12:15, wrap at 12:25. This run is finished, with no outstanding implementation.

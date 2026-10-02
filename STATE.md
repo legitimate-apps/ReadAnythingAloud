@@ -3,7 +3,7 @@
 Updated: 2026-10-02
 
 ## Development update — 2026-10-02
-Core-experience reliability work is complete on `astra/core-experience-1002`, pending PR review. This is
+Core-experience reliability work is complete on `astra/core-experience-1002`, in [PR #1](https://github.com/legitimate-apps/ReadAnythingAloud/pull/1). This is
 not a release. Playback intent, failure recovery, completion/resume, interruptions, cancelled queues,
 extraction fidelity/cancellation, multilingual segmentation, long-text Kokoro recovery and reader rejoin
 are covered by regressions. Both app platforms build; Mac reader viewport tests and real cached Kokoro
