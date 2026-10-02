@@ -90,6 +90,7 @@ public final class ArticleExtractor: NSObject {
 
     /// Loads `url` off-screen and extracts its article.
     public func extract(url: URL, mode: ExtractionMode = .article, timeout: TimeInterval = 30) async throws -> Article {
+        try Task.checkCancellation()
         guard let scheme = url.scheme?.lowercased(), ["http", "https", "file"].contains(scheme) else {
             throw ExtractionError.invalidURL
         }
@@ -97,13 +98,17 @@ public final class ArticleExtractor: NSObject {
         if let rules = await Self.extractionRules() {
             webView.configuration.userContentController.add(rules)
         }
+        try Task.checkCancellation()
         let host = hostView?()
         attach(webView, to: host)
-        defer { webView.removeFromSuperview() }
+        defer {
+            webView.stopLoading()
+            webView.removeFromSuperview()
+        }
 
         let loader = PageLoader(webView: webView)
         try await loader.load(url, timeout: timeout, finishWhenReadable: true)
-        await settle(webView)
+        try await settle(webView)
         return try await extract(from: webView, sourceURL: webView.url ?? url, mode: mode)
     }
 
@@ -124,9 +129,13 @@ public final class ArticleExtractor: NSObject {
 
     /// Extracts from raw HTML (a dropped `.html` file or shared page source).
     public func extract(html: String, baseURL: URL?, mode: ExtractionMode = .article) async throws -> Article {
+        try Task.checkCancellation()
         let webView = Self.makeWebView()
         attach(webView, to: hostView?())
-        defer { webView.removeFromSuperview() }
+        defer {
+            webView.stopLoading()
+            webView.removeFromSuperview()
+        }
         webView.configuration.defaultWebpagePreferences.allowsContentJavaScript = false
         let loader = PageLoader(webView: webView)
         try await loader.loadHTML(html, baseURL: baseURL, timeout: 20)
@@ -136,7 +145,9 @@ public final class ArticleExtractor: NSObject {
 
     /// Extracts from a web view that already shows the page (the interactive sheet after the user logged in).
     public func extract(from webView: WKWebView, sourceURL: URL?, mode: ExtractionMode) async throws -> Article {
+        try Task.checkCancellation()
         let raw = try await webView.evaluateJavaScript(Self.scripts + "\n;window.__readAloudExtract(\"\(mode.rawValue)\");")
+        try Task.checkCancellation()
         guard let json = raw as? String, let data = json.data(using: .utf8) else {
             throw ExtractionError.loadFailed("The page couldn't be read.")
         }
@@ -163,13 +174,14 @@ public final class ArticleExtractor: NSObject {
     }
 
     /// Gives client-rendered pages a moment to fill in: waits until the body's text length stops growing.
-    private func settle(_ webView: WKWebView) async {
+    private func settle(_ webView: WKWebView) async throws {
         var last = -1
         for _ in 0..<12 {
+            try Task.checkCancellation()
             let length = (try? await webView.evaluateJavaScript("document.body ? document.body.innerText.length : 0")) as? Int ?? 0
             if length > 500 && length == last { return }
             last = length
-            try? await Task.sleep(for: .milliseconds(350))
+            try await Task.sleep(for: .milliseconds(350))
         }
     }
 }
@@ -190,6 +202,8 @@ final class PageLoader: NSObject, WKNavigationDelegate {
     private var httpStatus: Int?
     private var mimeType: String?
     private var finishWhenReadable = false
+    private var activeNavigation: WKNavigation?
+    private var activeOperation: UUID?
     private var readinessPoll: Task<Void, Never>?
 
     init(webView: WKWebView) {
@@ -199,19 +213,14 @@ final class PageLoader: NSObject, WKNavigationDelegate {
     /// - Parameter finishWhenReadable: return once the document is parsed and its text has stopped growing,
     ///   instead of waiting for every subresource (ads, trackers, analytics) to finish loading.
     func load(_ url: URL, timeout: TimeInterval, finishWhenReadable: Bool = false) async throws {
-        self.finishWhenReadable = finishWhenReadable
-        try await run(timeout: timeout) {
+        try await run(timeout: timeout, finishWhenReadable: finishWhenReadable) {
             var request = URLRequest(url: url)
             request.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
             if url.isFileURL {
-                self.webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+                return self.webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
             } else {
-                self.webView.load(request)
+                return self.webView.load(request)
             }
-        }
-        if let status = httpStatus, status >= 400 { throw ExtractionError.httpStatus(status) }
-        if let mime = mimeType, !(mime.contains("html") || mime.contains("xml") || mime.hasPrefix("text/")) {
-            throw ExtractionError.notHTML(mime)
         }
     }
 
@@ -219,24 +228,53 @@ final class PageLoader: NSObject, WKNavigationDelegate {
         try await run(timeout: timeout) { self.webView.loadHTMLString(html, baseURL: baseURL) }
     }
 
-    private func run(timeout: TimeInterval, start: () -> Void) async throws {
+    private func run(timeout: TimeInterval, finishWhenReadable: Bool = false,
+                     start: () -> WKNavigation?) async throws {
+        try Task.checkCancellation()
+        guard activeOperation == nil else {
+            throw ExtractionError.loadFailed("A page is already loading.")
+        }
+        let operation = UUID()
+        activeOperation = operation
+        httpStatus = nil
+        mimeType = nil
+        self.finishWhenReadable = finishWhenReadable
         webView.navigationDelegate = self
-        defer { webView.navigationDelegate = nil }
+        defer {
+            webView.navigationDelegate = nil
+            readinessPoll?.cancel()
+            readinessPoll = nil
+            activeNavigation = nil
+            activeOperation = nil
+        }
         let watchdog = Task { @MainActor [weak self] in
             try await Task.sleep(for: .seconds(timeout))
-            self?.webView.stopLoading()
-            self?.finish(ExtractionError.timedOut)
+            guard let self, self.activeOperation == operation else { return }
+            self.finish(ExtractionError.timedOut)
+            self.webView.stopLoading()
         }
         defer { watchdog.cancel() }
         try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
-                continuation = cont
-                start()
+            do {
+                try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+                    continuation = cont
+                    activeNavigation = start()
+                    if activeNavigation == nil {
+                        finish(ExtractionError.loadFailed("The page couldn't be opened."))
+                    }
+                }
+            } catch {
+                // Cancellation can race a navigation failure before its main-actor handler runs.
+                try Task.checkCancellation()
+                throw error
             }
+            try Task.checkCancellation()
         } onCancel: {
             Task { @MainActor [weak self] in
-                self?.webView.stopLoading()
-                self?.finish(CancellationError())
+                guard let self, self.activeOperation == operation else { return }
+                // Complete first so WebKit's cancellation callback cannot replace this error.
+                self.finish(CancellationError())
+                self.webView.stopLoading()
             }
         }
     }
@@ -253,12 +291,14 @@ final class PageLoader: NSObject, WKNavigationDelegate {
         if navigationResponse.isForMainFrame {
             httpStatus = (navigationResponse.response as? HTTPURLResponse)?.statusCode
             mimeType = navigationResponse.response.mimeType
-            if let mime = mimeType, mime == "application/pdf" || mime.hasPrefix("audio/") || mime.hasPrefix("video/") {
+            // Status is authoritative even if the server sends a PDF, media or binary error body.
+            if let status = httpStatus, status >= 400 {
+                finish(ExtractionError.httpStatus(status))
                 return .cancel
             }
-            // An error status decides the outcome on its own; don't wait for the error page's ads and scripts.
-            if let status = httpStatus, status >= 400 {
-                finish(nil)
+            if let mime = mimeType, !(mime.contains("html") || mime.contains("xml") || mime.hasPrefix("text/")) {
+                // Finish directly: WebKit does not always deliver a failure after a policy cancellation.
+                finish(ExtractionError.notHTML(mime))
                 return .cancel
             }
         }
@@ -266,11 +306,22 @@ final class PageLoader: NSObject, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard navigation === activeNavigation else { return }
         finish(nil)
     }
 
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        guard continuation != nil else { return }
+        // A client-side redirect creates a new WKNavigation; follow it and ignore the old page's callbacks.
+        activeNavigation = navigation
+        httpStatus = nil
+        mimeType = nil
+        readinessPoll?.cancel()
+        readinessPoll = nil
+    }
+
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        guard finishWhenReadable, readinessPoll == nil else { return }
+        guard navigation === activeNavigation, finishWhenReadable, readinessPoll == nil else { return }
         readinessPoll = Task { @MainActor [weak self, weak webView] in
             var last = -1
             while !Task.isCancelled {
@@ -278,6 +329,7 @@ final class PageLoader: NSObject, WKNavigationDelegate {
                 guard let webView, !Task.isCancelled else { return }
                 let probe = try? await webView.evaluateJavaScript(
                     "document.readyState + '|' + (document.body ? document.body.innerText.length : 0)") as? String
+                guard !Task.isCancelled else { return }
                 let parts = probe?.split(separator: "|") ?? []
                 guard parts.count == 2, parts[0] != "loading", let length = Int(parts[1]) else { continue }
                 if length > 1_000, length == last {
@@ -290,10 +342,12 @@ final class PageLoader: NSObject, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        guard navigation === activeNavigation else { return }
         finish(Self.mapped(error, mime: mimeType))
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        guard navigation === activeNavigation else { return }
         finish(Self.mapped(error, mime: mimeType))
     }
 
