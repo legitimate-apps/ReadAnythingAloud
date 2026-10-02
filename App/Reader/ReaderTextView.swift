@@ -167,16 +167,19 @@ struct ReaderTextView: UIViewRepresentable {
         func apply(_ config: ReaderTextConfiguration, animated: Bool) {
             guard let view = textView, builtFor != nil else { return }
             let jumped = config.jumpCounter != lastConfig?.jumpCounter
+            let rejoined = config.follow && lastConfig?.follow == false
             view.contentInset.bottom = config.bottomInset
             view.verticalScrollIndicatorInsets.bottom = config.bottomInset
+            let refreshGeometry = jumped || rejoined || needsFullLayout
+            if let sentence = config.sentenceRange, (config.follow || jumped), !userIsScrolling,
+               sentence != lastScrolledSentence || jumped || rejoined {
+                lastScrolledSentence = sentence
+                reveal(sentence, animated: animated, force: jumped || rejoined)
+            }
+            if refreshGeometry { view.highlight.invalidate() }
             view.highlight.update(sentence: parent?.style.highlight.showsSentence == true ? config.sentenceRange : nil,
                                   word: parent?.style.highlight.showsWord == true ? config.wordRange : nil,
                                   in: view, animated: animated && !jumped)
-            if let sentence = config.sentenceRange, (config.follow || jumped), !userIsScrolling,
-               sentence != lastScrolledSentence || jumped {
-                lastScrolledSentence = sentence
-                reveal(sentence, animated: animated, force: jumped)
-            }
             lastConfig = config
         }
 
@@ -443,15 +446,18 @@ struct ReaderTextView: NSViewRepresentable {
         func apply(_ config: ReaderTextConfiguration, animated: Bool) {
             guard let view = textView, builtFor != nil, let style = parent?.style else { return }
             let jumped = config.jumpCounter != lastConfig?.jumpCounter
+            let rejoined = config.follow && lastConfig?.follow == false
             scrollView?.contentInsets.bottom = config.bottomInset
+            let refreshGeometry = jumped || rejoined || needsFullLayout
+            if let sentence = config.sentenceRange, config.follow || jumped, !userIsScrolling,
+               sentence != lastScrolledSentence || jumped || rejoined {
+                lastScrolledSentence = sentence
+                reveal(sentence, force: jumped || rejoined)
+            }
+            if refreshGeometry { view.resetHighlight() }
             view.setHighlight(sentence: style.highlight.showsSentence ? config.sentenceRange : nil,
                               word: style.highlight.showsWord ? config.wordRange : nil,
                               animated: animated && !jumped)
-            if let sentence = config.sentenceRange, config.follow || jumped, !userIsScrolling,
-               sentence != lastScrolledSentence || jumped {
-                lastScrolledSentence = sentence
-                reveal(sentence, force: jumped)
-            }
             lastConfig = config
         }
 

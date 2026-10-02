@@ -8,14 +8,20 @@
 
 /* Begin PBXBuildFile section */
 		04E4897A730478A71F16EDC1 /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769395E91D90FB5BD3F74797 /* ShareInbox.swift */; };
+		1EF1BD8A1BBFBB6124A2BDD0 /* ReaderFollowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700BD2F4269705B94EE0E874 /* ReaderFollowTests.swift */; };
+		231F3C5908C4784F987BE1FC /* RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E92962942F5EA966CA2D51 /* RemoteImage.swift */; };
 		25EB3B6C8647F448B8FEA7ED /* ArticleTextBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7244C8E9C914F657269B0706 /* ArticleTextBuilder.swift */; };
 		32CD651BAF5915393E830B0A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B48E5E94CEA79F2A0DC7C7A2 /* Assets.xcassets */; };
+		428692105CA4BD3DEED4F650 /* ArticleTextBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7244C8E9C914F657269B0706 /* ArticleTextBuilder.swift */; };
+		54832FEDA1A8EA93D9E69F0F /* ReaderTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2C624CBE10699FEB2FE5A49 /* ReaderTextView.swift */; };
 		5BDC2DD96DFD58563E5186D4 /* Preprocess.js in Resources */ = {isa = PBXBuildFile; fileRef = 116FBF27766E7B331ACB4573 /* Preprocess.js */; };
 		5FA7BEC55257C7838563BC00 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D71F4C92929F0419E969B9ED /* ShareViewController.swift */; };
 		63374BB97063C5D6F09A9535 /* ReadAnythingAloudApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC851DC5071A8C31F167266 /* ReadAnythingAloudApp.swift */; };
 		77F7C4C6762B4847894CEA28 /* VoicePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86279EDF5777EA7ABF239D62 /* VoicePicker.swift */; };
 		8B70411C08F965D662DE7C52 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 111C8F62F5D9AD1EF814C838 /* ShareExtension.appex */; platformFilters = (ios, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8E745E0205EC631C1C477F37 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1071ED606F4EDA4EF8DFA94 /* LibraryView.swift */; };
+		9BBE7535A554A739E942392B /* ReaderStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C061655B8723229447CBEA1 /* ReaderStyle.swift */; };
+		AB7D5049E5C6898870A73F72 /* ReadAloudKit in Frameworks */ = {isa = PBXBuildFile; productRef = CDFCEE6CC3462F3D99B4EEFE /* ReadAloudKit */; };
 		B269A36FE96D9C540F6DECF3 /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769395E91D90FB5BD3F74797 /* ShareInbox.swift */; };
 		B64A0165349A86E39794BA6B /* ReaderStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C061655B8723229447CBEA1 /* ReaderStyle.swift */; };
 		C0509C78BF56E88D0BBEB275 /* ReadAloudKit in Frameworks */ = {isa = PBXBuildFile; productRef = 8FA0FFCF2B2DB0A8E0022993 /* ReadAloudKit */; };
@@ -60,9 +66,11 @@
 		3E4345F6A403DB61F6216DCB /* ReadAnythingAloud-iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ReadAnythingAloud-iOS.entitlements"; sourceTree = "<group>"; };
 		461E40DC97474FD934CF471D /* ReadAloudKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ReadAloudKit; path = Packages/ReadAloudKit; sourceTree = SOURCE_ROOT; };
 		622BF237C0F8B6807F21B776 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		700BD2F4269705B94EE0E874 /* ReaderFollowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderFollowTests.swift; sourceTree = "<group>"; };
 		7244C8E9C914F657269B0706 /* ArticleTextBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleTextBuilder.swift; sourceTree = "<group>"; };
 		769395E91D90FB5BD3F74797 /* ShareInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInbox.swift; sourceTree = "<group>"; };
 		86279EDF5777EA7ABF239D62 /* VoicePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePicker.swift; sourceTree = "<group>"; };
+		928E75D4F580D3BAAFFC7AF2 /* ReaderTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReaderTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FAD23D6BDD2F24B5BC7DD6D /* ReadAnythingAloud.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ReadAnythingAloud.entitlements; sourceTree = "<group>"; };
 		A1071ED606F4EDA4EF8DFA94 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		A2C624CBE10699FEB2FE5A49 /* ReaderTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderTextView.swift; sourceTree = "<group>"; };
@@ -83,6 +91,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				C0509C78BF56E88D0BBEB275 /* ReadAloudKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7F6E1FAC63E0443542E0DE1F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB7D5049E5C6898870A73F72 /* ReadAloudKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -152,6 +168,7 @@
 			isa = PBXGroup;
 			children = (
 				307065C35D6831A6533FF8EF /* ReadAnythingAloud.app */,
+				928E75D4F580D3BAAFFC7AF2 /* ReaderTests.xctest */,
 				111C8F62F5D9AD1EF814C838 /* ShareExtension.appex */,
 			);
 			name = Products;
@@ -164,6 +181,7 @@
 				6AA77AD63F321DD4CF0A8AEA /* Packages */,
 				CD2F71DE9EEDCAAA8CEE60FF /* Shared */,
 				EF8B65E21CE98D8B367023BF /* ShareExtension */,
+				CE3D736D2527ACBB71F6933D /* Tests */,
 				93FCE636CD078C3E099B9934 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -174,6 +192,22 @@
 				769395E91D90FB5BD3F74797 /* ShareInbox.swift */,
 			);
 			path = Shared;
+			sourceTree = "<group>";
+		};
+		CE3D736D2527ACBB71F6933D /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				E4058C6538A91B618D999648 /* ReaderTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		E4058C6538A91B618D999648 /* ReaderTests */ = {
+			isa = PBXGroup;
+			children = (
+				700BD2F4269705B94EE0E874 /* ReaderFollowTests.swift */,
+			);
+			path = ReaderTests;
 			sourceTree = "<group>";
 		};
 		E8921FBAC69A8ED928CE1B88 /* Reader */ = {
@@ -242,6 +276,25 @@
 			productReference = 307065C35D6831A6533FF8EF /* ReadAnythingAloud.app */;
 			productType = "com.apple.product-type.application";
 		};
+		FC18F7236822BF2E38BD9CAA /* ReaderTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8FBE33A08BC83C0319D197F3 /* Build configuration list for PBXNativeTarget "ReaderTests" */;
+			buildPhases = (
+				BBFCA15FF89EE820E70F3C24 /* Sources */,
+				7F6E1FAC63E0443542E0DE1F /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ReaderTests;
+			packageProductDependencies = (
+				CDFCEE6CC3462F3D99B4EEFE /* ReadAloudKit */,
+			);
+			productName = ReaderTests;
+			productReference = 928E75D4F580D3BAAFFC7AF2 /* ReaderTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -256,6 +309,10 @@
 						ProvisioningStyle = Automatic;
 					};
 					A232374FB064888EBCF74586 = {
+						DevelopmentTeam = 3LTL47SJ8C;
+						ProvisioningStyle = Automatic;
+					};
+					FC18F7236822BF2E38BD9CAA = {
 						DevelopmentTeam = 3LTL47SJ8C;
 						ProvisioningStyle = Automatic;
 					};
@@ -280,6 +337,7 @@
 			targets = (
 				A232374FB064888EBCF74586 /* ReadAnythingAloud */,
 				704ED15401F51B6732A73C1E /* ShareExtension */,
+				FC18F7236822BF2E38BD9CAA /* ReaderTests */,
 			);
 		};
 /* End PBXProject section */
@@ -335,6 +393,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BBFCA15FF89EE820E70F3C24 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				428692105CA4BD3DEED4F650 /* ArticleTextBuilder.swift in Sources */,
+				1EF1BD8A1BBFBB6124A2BDD0 /* ReaderFollowTests.swift in Sources */,
+				9BBE7535A554A739E942392B /* ReaderStyle.swift in Sources */,
+				54832FEDA1A8EA93D9E69F0F /* ReaderTextView.swift in Sources */,
+				231F3C5908C4784F987BE1FC /* RemoteImage.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E60419377B3CEE5C78D296E4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -368,6 +438,22 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		121ED03C34779A47162454B5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.legitimateapps.ReaderTests;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
 		317DD89D092B1BDFAAE1D434 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -547,6 +633,22 @@
 			};
 			name = Debug;
 		};
+		C900E2DF7AE1AB6E6078F79F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.legitimateapps.ReaderTests;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 		CCC20A03BAC753265C714637 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -614,6 +716,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		8FBE33A08BC83C0319D197F3 /* Build configuration list for PBXNativeTarget "ReaderTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				121ED03C34779A47162454B5 /* Debug */,
+				C900E2DF7AE1AB6E6078F79F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		EEF79F72019789C1DD13F3D0 /* Build configuration list for PBXNativeTarget "ShareExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -634,6 +745,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		8FA0FFCF2B2DB0A8E0022993 /* ReadAloudKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ReadAloudKit;
+		};
+		CDFCEE6CC3462F3D99B4EEFE /* ReadAloudKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ReadAloudKit;
 		};

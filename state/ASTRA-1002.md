@@ -98,3 +98,17 @@ completion; discarded synthesis queues reject late cache/engine results and cann
 Recovered focused review:20 tests/4suites passed13.852s, including real audio completion and pause/resume;
 independent review found no further blocker in the earlier transport/progress commits.
 Central Mac reader test target is building a regression for returning to the unchanged paused sentence.
+
+## Verified reader follow — 11:59 EDT
+Back to reading now reveals an unchanged paused sentence on Mac/iOS. Highlight geometry refresh follows
+the full target layout so a far-away sentence is highlighted at its actual position. Added a ReaderTests
+Mac XCTest target compiling the production renderer. Actual AppKit viewport regression fails on original
+source (target2501pt below viewport, allowed367pt) and passes fixed source. Captured/inspected JPEGs
+show browsing away and rejoined paragraph29 with correct sentence highlight.
+Evidence: reader-baseline-test.log (red), reader-direct-green.log (1test passed), reader-green-build.log,
+Browsing-away-from-paused-sentence.jpg and Rejoined-paused-sentence.jpg in central leased DD.
+Xcode test runner could not load this external-volume bundle; build-for-testing followed by direct
+`xcrun xctest "$DD/Build/Products/Debug/ReaderTests.xctest"` runs successfully. Optional env
+READALOUD_READER_EVIDENCE_DIR writes rendered JPEGs. No screenshots or device-runtime claims for iOS.
+Independent source review of the integrated chunking and extraction commits found no concrete regression.
+Next: final integrated package suite, Mac/iOS app builds, bounded iOS smoke if host remains healthy; PR.
