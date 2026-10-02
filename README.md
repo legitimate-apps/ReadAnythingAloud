@@ -26,6 +26,21 @@ The engine, extraction and timing code live in the `ReadAloudKit` Swift package 
 `Packages/ReadAloudKit`). The first use of the natural voice downloads its model (about 150 MB on macOS,
 250 MB on iOS).
 
+## Verification
+
+Run the package tests with `swift test` from `Packages/ReadAloudKit`. The `ReaderTests` Xcode scheme
+runs three macOS tests against the actual AppKit renderer, covering paused rejoin, an active scroll
+ending, and returning to a distant sentence after playback advances.
+
+With the Kokoro Core ML models already downloaded on a Mac, opt into the real-model overflow regression:
+
+```sh
+READALOUD_KOKORO_COREML=1 swift test --package-path Packages/ReadAloudKit --filter KokoroCoreMLIntegrationTests
+```
+
+This checks that a numeric passage really exceeds the raw model's phoneme limit, then verifies that
+production recovery returns non-silent audio and aligned word timings. It is skipped by default.
+
 ## License
 
 MIT (see `LICENSE`). Third-party components and model weights are credited in `NOTICE`.

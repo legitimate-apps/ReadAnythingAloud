@@ -2,7 +2,7 @@
 
 ## Delivery
 - Integration branch: `astra/core-experience-1002`, isolated worktree `ReadAloud-astra-1002`, base `121e5c4`.
-- Implementation complete through `de3b12c`; final verification passed; PR delivery in progress at12:13 EDT.
+- Implementation complete through `de3b12c`; final verification passed; PR delivery in progress at 12:13 EDT.
 - Main checkout remains clean at `121e5c4`. No merge, release, store submission, spending or third-party messages.
 - Commits use legitimate-apps and `Co-Authored-By: Codex <noreply@openai.com>`.
 - Repository has no CI workflow; verification below is local. Never add a self-hosted runner to this public repo.
@@ -16,7 +16,7 @@ work. Priority was the core promise: readable content, reliable speech, synchron
 - Synthesis failures stop at unread text after queued audio finishes, without retry storms or silent skipping.
 - Stop rejects late work and clears stale positions; short-sentence timing records survive until played.
 - Elapsed time stays observable between words. Pause estimates are counted once, including heading pauses.
-- Completion remains100% after close/reopen and voice changes.99% resumes the real word instead of completing.
+- Completion remains 100% after close/reopen and voice changes. 99% resumes the real word instead of completing.
 - Repeated Play is idempotent; nonfinite rate changes are ignored; stale voice/queue observers are rejected.
 - Audio interruptions resume only previously playing sessions when the OS permits; explicit Pause cancels intent.
 - Discarded synthesis queues remain cancelled and reject late engine/cache results.
@@ -49,17 +49,17 @@ All build/test artifacts are in external leased DerivedData. Central directory:
 | Check | Observed result | Log/artifact |
 | --- | --- | --- |
 | Baseline package |54/54 passed | `baseline-tests.log` |
-| Playback regressions against original | Pause ignored, final failure retried about300times/8s, unread text skipped | `playback-red.log` |
-| Recovered integrated package |97 tests/16suites reported passed in13.163s;2optional live-web tests skipped | `final-package-tests.log` |
+| Playback regressions against original | Pause ignored, final failure retried about 300 times in 8 seconds, unread text skipped | `playback-red.log` |
+| Recovered integrated package |97 tests / 16 suites reported passed in 13.163s; 2 optional live-web tests skipped | `final-package-tests.log` |
 | Long-text chunking/document tests |20/20 passed; exact reconstructed samples and timing offsets, Unicode, cancellation/error coverage | `voice-chunking.log` |
-| Extracted-content fidelity | Original failed6assertions; fixed18/18 combined tests passed | `extraction-red.log`, `extraction-green.log` |
-| Multilingual extraction/segmentation | Original Chinese fixture rejected; fixed30/30 combined tests passed | `multilingual-red.log`, `multilingual-green.log` |
-| Loader HTTP/cancellation/reuse |10/10 focused;25 broader extraction tests executed passed,2live skips | Extraction DD: `loader-recovery-image.log`, `extraction-recovery.log` |
-| Recovered interruption/queue/progress |20tests/4suites passed13.852s, including actual Mac audio completion and pause/resume | Review DD: `recovery-focused.log` |
-| Mac reader regressions | Each added failure reproduced; final3/3 passed2.229s | `reader-baseline-test.log`, `reader-live-scroll-red.log`, `reader-distant-before.log`, `reader-final-tests.log` |
+| Extracted-content fidelity | Original failed 6 assertions; fixed 18/18 combined tests passed | `extraction-red.log`, `extraction-green.log` |
+| Multilingual extraction/segmentation | Original Chinese fixture rejected; fixed 30/30 combined tests passed | `multilingual-red.log`, `multilingual-green.log` |
+| Loader HTTP/cancellation/reuse |10/10 focused; 25 broader extraction tests executed passed, 2 live skips | Extraction DD: `loader-recovery-image.log`, `extraction-recovery.log` |
+| Recovered interruption/queue/progress |20 tests / 4 suites passed in 13.852s, including actual Mac audio completion and pause/resume | Review DD: `recovery-focused.log` |
+| Mac reader regressions | Each added failure reproduced; final 3/3 passed in 2.229s | `reader-baseline-test.log`, `reader-live-scroll-red.log`, `reader-distant-before.log`, `reader-final-tests.log` |
 | Reader target build | Passed | `reader-final-build.log` |
-| Final macOS app build atde3b12c | Passed | `final-mac-build.log` |
-| iOS Simulator app+Share extension | Passed atde3b12c (arm64+x86_64) | `final-ios-build.log` |
+| Final macOS app build at `de3b12c` | Passed | `final-mac-build.log` |
+| iOS Simulator app+Share extension | Passed at `de3b12c` (arm64+x86_64) | `final-ios-build.log` |
 
 Package command: `swift test --jobs 2 --package-path Packages/ReadAloudKit --scratch-path "$DD/PackageBuild"`.
 Mac reader command: `xcodebuild -project ReadAnythingAloud.xcodeproj -scheme ReaderTests
@@ -67,11 +67,11 @@ Mac reader command: `xcodebuild -project ReadAnythingAloud.xcodeproj -scheme Rea
 then `xcrun xctest "$DD/Build/Products/Debug/ReaderTests.xctest"`.
 Optional `READALOUD_READER_EVIDENCE_DIR` writes JPEGs. The Xcode test runner could not load the external-volume
 bundle on this host; direct xctest successfully executes the same built bundle. This is recorded, not hidden.
-App builds use scheme ReadAnythingAloud, the same DD and2jobs, destinations `platform=macOS,arch=arm64`
+App builds use scheme ReadAnythingAloud, the same DD and 2 jobs, destinations `platform=macOS,arch=arm64`
 and `generic/platform=iOS Simulator`, with signing disabled. No install/archive/release is implied.
 
 ## Recovery, reviews and resource ownership
-The11:40 Terminal crash killed the original helpers. Recovery inspected actual worktrees and logs;
+The 11:40 Terminal crash killed the original helpers. Recovery inspected actual worktrees and logs;
 unverified/crashed helper logs were not counted as passes. Recovered changes were tested, reviewed and
 committed before integration. All useful helper work is integrated; no helper implementation is outstanding.
 - Extraction branch: `astra/extraction-reliability-1002`; details in [extraction state](ASTRA-1002-EXTRACTION.md).
@@ -81,17 +81,18 @@ Independent review covered playback, chunking and extraction. Reader review foun
 loss; the fix and distant-target regression are integrated. Only one build/test lane ran after recovery.
 Our simulator `EB170F21-6485-4FB0-9703-11BE9C49E21F` stayed Shutdown after recovery; another project owned
 a booted device, so no second simulator was started. No Android emulator was started by this run.
-Final resource release is pending platform build completion.
+All owned simulator and DerivedData leases are released. The owned simulator was confirmed Shutdown and disposed.
+Builds/tests are finished; no helper or emulator is running for this run.
 
 ## Limits and remaining roadmap
 - No new iPhone/iPad runtime or physical-device interruption evidence. Precrash simulator launch wedged;
   final simulator builds establish compilation, not playback or UI behavior on devices.
-- Real Mac Kokoro overflow recovery passed with cached models: raw engine rejected a299-character numeric
-  passage; the wrapper produced1,680,000 samples at24kHz (70seconds) and60 ordered, positive word timings.
+- Real Mac Kokoro overflow recovery passed with cached models: raw engine rejected a 299-character numeric
+  passage; the wrapper produced 1,680,000 samples at 24 kHz (70 seconds) and 60 ordered, positive word timings.
   This proves real synthesis/recovery, not a listening-quality judgment or iOS ONNX runtime behavior.
   Ordinary successful clips retain their existing model revision/cache.
 - Optional live-web extraction tests, paid ElevenLabs calls and release/TestFlight checks were not run.
-- Historical September26 device/release observations in STATE.md remain historical and were not reverified.
+- Historical September 26 device/release observations in STATE.md remain historical and were not reverified.
 
 ## Exact next step
 Review the PR diff, then lease one iOS device/simulator and verify the final branch on iPhone/iPad:
@@ -102,8 +103,8 @@ and unpunctuated passage to exercise real phoneme expansion and listen/check wor
 Do not merge, release or spend on cloud speech without the applicable authorization.
 
 ## Final real-model verification — 12:13 EDT
-Added opt-in KokoroCoreMLIntegrationTests. Raw Kokoro must throw phonemeSequenceTooLong for60 repetitions
-of2024; production recovery must return non-silent24kHz audio and all60 monotonic word timings within
-clip duration. Test passed16.979s with existing cached models (`real-kokoro-overflow.log`). No cloud speech
+Added opt-in KokoroCoreMLIntegrationTests. Raw Kokoro must throw phonemeSequenceTooLong for 60 repetitions
+of 2024; production recovery must return non-silent 24 kHz audio and all 60 monotonic word timings within
+clip duration. Test passed in 16.979s with existing cached models (`real-kokoro-overflow.log`). No cloud speech
 calls. Default test runs skip this model-dependent case unless READALOUD_KOKORO_COREML=1.
-Latest operator timing: start nothing new12:15, wrap12:25; no new implementation is planned.
+Latest operator timing: start nothing new work after 12:15, wrap at 12:25; no new implementation is planned.
