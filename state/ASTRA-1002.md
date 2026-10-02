@@ -118,3 +118,10 @@ Final package run at0095f5b:97 tests/16suites reported passed13.163s (2optional 
 `final-package-tests.log`. No new package failures. Reader increment pushed immediately.
 Final Mac/iOS app builds now sequential. Another project owns a booted simulator, so ours remains
 Shutdown to honor the one-simulator limit; no borrowing or stopping another session's device.
+
+## Verified live-scroll rejoin — 12:03 EDT
+Additional actual-renderer regression reproduced rejoin being lost during a still-active scroll gesture.
+Keep the same-sentence reveal pending and apply the last configuration when dragging/deceleration ends;
+Mac/iOS parity. Existing paused rejoin stays green.2/2 real AppKit tests passed1.493s after the new case
+failed before the fix. Logs: reader-live-scroll-red.log, reader-live-scroll-green.log; test build succeeded.
+No new package changes after the97-test integrated run. Final app platform builds follow this last UI edit.

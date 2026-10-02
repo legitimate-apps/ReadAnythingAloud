@@ -168,6 +168,8 @@ struct ReaderTextView: UIViewRepresentable {
             guard let view = textView, builtFor != nil else { return }
             let jumped = config.jumpCounter != lastConfig?.jumpCounter
             let rejoined = config.follow && lastConfig?.follow == false
+            // A rejoin can arrive while a drag/deceleration is finishing. Keep the reveal pending.
+            if rejoined { lastScrolledSentence = nil }
             view.contentInset.bottom = config.bottomInset
             view.verticalScrollIndicatorInsets.bottom = config.bottomInset
             let refreshGeometry = jumped || rejoined || needsFullLayout
@@ -243,11 +245,16 @@ struct ReaderTextView: UIViewRepresentable {
         }
 
         func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-            if !decelerate { userIsScrolling = false }
+            if !decelerate { finishUserScroll() }
         }
 
         func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+            finishUserScroll()
+        }
+
+        private func finishUserScroll() {
             userIsScrolling = false
+            if let config = lastConfig { apply(config, animated: true) }
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {}
@@ -447,6 +454,8 @@ struct ReaderTextView: NSViewRepresentable {
             guard let view = textView, builtFor != nil, let style = parent?.style else { return }
             let jumped = config.jumpCounter != lastConfig?.jumpCounter
             let rejoined = config.follow && lastConfig?.follow == false
+            // A rejoin can arrive while a drag/deceleration is finishing. Keep the reveal pending.
+            if rejoined { lastScrolledSentence = nil }
             scrollView?.contentInsets.bottom = config.bottomInset
             let refreshGeometry = jumped || rejoined || needsFullLayout
             if let sentence = config.sentenceRange, config.follow || jumped, !userIsScrolling,
@@ -530,6 +539,7 @@ struct ReaderTextView: NSViewRepresentable {
 
         @objc func didEndLiveScroll() {
             userIsScrolling = false
+            if let config = lastConfig { apply(config, animated: true) }
         }
 
         @objc func frameChanged() {

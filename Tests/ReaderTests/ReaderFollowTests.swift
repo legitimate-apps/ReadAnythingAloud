@@ -5,6 +5,14 @@ import XCTest
 @MainActor
 final class ReaderFollowTests: XCTestCase {
     func testRejoiningPausedSentenceRevealsItImmediately() async throws {
+        try await checkRejoin(duringScroll: false)
+    }
+
+    func testRejoiningDuringLiveScrollRevealsWhenScrollingEnds() async throws {
+        try await checkRejoin(duringScroll: true)
+    }
+
+    private func checkRejoin(duringScroll: Bool) async throws {
         _ = NSApplication.shared
         let document = DocumentBuilder.build(Article(title: "Reader follow check", language: "en", blocks:
             (0..<70).map { Block(kind: .paragraph, text: "Paragraph \($0) keeps the reader focused on the spoken sentence while allowing a quiet look ahead.") }))
@@ -38,6 +46,7 @@ final class ReaderFollowTests: XCTestCase {
         let readingOrigin = scroll.contentView.bounds.origin.y
         XCTAssertGreaterThan(readingOrigin, 600, "The target must start well beyond the first viewport")
 
+        if duringScroll { coordinator.willStartLiveScroll() }
         configuration.follow = false
         coordinator.apply(configuration, animated: false)
         scroll.contentView.setBoundsOrigin(.zero)
@@ -48,6 +57,11 @@ final class ReaderFollowTests: XCTestCase {
 
         configuration.follow = true
         coordinator.apply(configuration, animated: false)
+        if duringScroll {
+            XCTAssertEqual(scroll.contentView.bounds.origin.y, 0, accuracy: 1,
+                           "An active scroll gesture must not be fought")
+            coordinator.didEndLiveScroll()
+        }
         try await Task.sleep(for: .milliseconds(500))
         let layout = try XCTUnwrap(textView.textLayoutManager)
         let rect = try XCTUnwrap(HighlightGeometry.rects(for: sentence.ns, in: layout, fontSize: style.fontSize).first)
