@@ -38,6 +38,7 @@ public final class ReadingSession {
     private var clipTime: Double = 0
     @ObservationIgnored private var queueGeneration = 0
     @ObservationIgnored private var isClosed = false
+    @ObservationIgnored private var interruptedPlayIntent: Bool?
 
     @ObservationIgnored private let player = SpeechPlayer()
     @ObservationIgnored private var queue: SynthesisQueue?
@@ -142,6 +143,7 @@ public final class ReadingSession {
     }
 
     public func play() {
+        interruptedPlayIntent = nil
         guard !isClosed, !isPlaying, !document.sentences.isEmpty else { return }
         errorMessage = nil
         switch state {
@@ -155,6 +157,7 @@ public final class ReadingSession {
     }
 
     public func pause() {
+        interruptedPlayIntent = nil
         if preparingMessage != nil {
             // Pausing while the voice loads cancels the pending start; the load itself carries on.
             voiceTask?.cancel()
@@ -164,6 +167,21 @@ public final class ReadingSession {
         }
         player.pause()
         saveProgress(force: true)
+    }
+
+    /// System interruptions may resume only the playback they actually interrupted. Keeping the
+    /// intent on this session prevents an interruption from starting a newly opened article.
+    public func interruptionBegan() {
+        guard !isClosed, interruptedPlayIntent == nil else { return }
+        let shouldResume = isPlaying
+        pause()
+        interruptedPlayIntent = shouldResume
+    }
+
+    public func interruptionEnded(shouldResume: Bool) {
+        let wantedPlayback = interruptedPlayIntent == true
+        interruptedPlayIntent = nil
+        if shouldResume, wantedPlayback { play() }
     }
 
     public func skipSentence(_ delta: Int) {
@@ -244,6 +262,7 @@ public final class ReadingSession {
     public func setVoice(_ newVoice: VoiceID) {
         guard newVoice != voice else { return }
         let wasPlaying = isPlaying
+        let wasFinished = state == .finished
         voiceTask?.cancel()
         voiceTask = nil
         preparingMessage = nil
@@ -253,7 +272,12 @@ public final class ReadingSession {
         settings.preferredVoice = newVoice
         durations = Array(repeating: nil, count: document.sentences.count)
         rebuildQueue()
-        if wasPlaying { start(sentence: sentence, word: word) }
+        if wasFinished {
+            state = .finished
+            nowPlaying.update(from: self)
+        } else if wasPlaying {
+            start(sentence: sentence, word: word)
+        }
     }
 
     /// Stops playback and saves progress. Call when the reader closes.
@@ -261,6 +285,7 @@ public final class ReadingSession {
         guard !isClosed else { return }
         saveProgress(force: true)
         isClosed = true
+        interruptedPlayIntent = nil
         queueGeneration += 1
         voiceTask?.cancel()
         voiceTask = nil

@@ -97,4 +97,30 @@ struct SessionProgressTests {
         #expect(changed.withLock { $0 })
     }
 
+    @Test(arguments: [false, true])
+    func voiceChangePreservesCompletedArticle(restored: Bool) async throws {
+        let article = article()
+        let library = library()
+        library.add(article)
+        if restored {
+            library.updateProgress(article.id, ReadingProgress(sentence: 0, word: nil, fraction: 1))
+        }
+        let session = ReadingSession(article: article, library: library, settings: settings(), engine: FakeEngine())
+        defer { session.close() }
+        if !restored {
+            session.rate = 3
+            session.play()
+            let deadline = ContinuousClock.now + .seconds(5)
+            while session.state != .finished, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            try #require(session.state == .finished)
+        }
+        session.setVoice(VoiceID(engine: .apple, identifier: "other"))
+        #expect(session.state == .finished)
+        #expect(session.fraction == 1)
+        session.close()
+        #expect(library.item(article.id)?.isFinished == true)
+    }
+
 }

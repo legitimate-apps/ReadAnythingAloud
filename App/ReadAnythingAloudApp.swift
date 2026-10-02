@@ -108,10 +108,11 @@ final class AudioSessionController {
                 guard let typeValue, let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
                 let session = AudioSessionController.shared.model?.session
                 if type == .began {
-                    session?.pause()
-                } else if let optionsValue, AVAudioSession.InterruptionOptions(rawValue: optionsValue).contains(.shouldResume) {
-                    try? AVAudioSession.sharedInstance().setActive(true)
-                    session?.play()
+                    session?.interruptionBegan()
+                } else {
+                    let shouldResume = AVAudioSession.InterruptionOptions(rawValue: optionsValue ?? 0).contains(.shouldResume)
+                    if shouldResume { try? AVAudioSession.sharedInstance().setActive(true) }
+                    session?.interruptionEnded(shouldResume: shouldResume)
                 }
             }
         }
