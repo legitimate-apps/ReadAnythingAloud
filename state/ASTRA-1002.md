@@ -90,3 +90,11 @@ Two recovered helpers maximum; only one build slot. No simulator booted. Review 
 interruption/completion/queue cancellation; root is adding a real AppKit reader-follow regression.
 Latest operator timing overrides earlier sections: commit each verified increment immediately with state;
 start nothing new after12:10, wrap at12:20, hard cutoff1pm or usage reset, whichever first.
+
+## Verified review increment — 11:54 EDT
+Integrated b167b08/c47d421/7be4561: interruptions resume only previously playing sessions when the OS
+allows; explicit transport action overrides interrupted intent; voice changes retain actual/restored
+completion; discarded synthesis queues reject late cache/engine results and cannot restart workers.
+Recovered focused review:20 tests/4suites passed13.852s, including real audio completion and pause/resume;
+independent review found no further blocker in the earlier transport/progress commits.
+Central Mac reader test target is building a regression for returning to the unchanged paused sentence.
