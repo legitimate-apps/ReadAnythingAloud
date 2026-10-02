@@ -58,7 +58,7 @@ public struct ArticleSummary: Codable, Sendable, Hashable, Identifiable {
     public var addedAt: Date
     public var progress: ReadingProgress?
 
-    public var isFinished: Bool { (progress?.fraction ?? 0) >= 0.98 }
+    public var isFinished: Bool { (progress?.fraction ?? 0) >= 1 }
 }
 
 /// Persists articles as JSON files in Application Support, with a small index for the list.

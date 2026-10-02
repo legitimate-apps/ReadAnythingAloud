@@ -179,6 +179,8 @@ public final class SpeechPlayer {
                 self.fetching = false
                 let offset = self.clipOffset(for: word, in: sentence, clip: clip)
                 self.schedule(clip, sentence: sentence, fromFrame: offset)
+                self.position?.clipTime = Double(offset) / self.format.sampleRate
+                if let position = self.position { self.onPosition?(position) }
                 if self.isActive {
                     guard self.startEngineIfNeeded() else { return }
                     self.node.play()
@@ -202,7 +204,7 @@ public final class SpeechPlayer {
         return max(0, Int((clip.wordTimings[local].start - 0.04) * clip.sampleRate))
     }
 
-    private func pauseAfter(sentence: Int) -> Double {
+    func pauseAfter(sentence: Int) -> Double {
         guard let document else { return sentencePause }
         let s = document.sentences[sentence]
         guard s.endsBlock else { return sentencePause }
@@ -397,6 +399,7 @@ public final class SpeechPlayer {
             onPosition?(newPosition)
         } else {
             position = newPosition
+            onPosition?(newPosition)
         }
         fillAhead()
     }

@@ -34,6 +34,14 @@ contract, run-to-done and simulator lifecycle skills. Current release state is h
   passed 6/6 including stop-during-synthesis and real audio-clock coverage of all 12 short sentences.
   Logs: `baseline-tests.log`, `playback-red.log`, `playback-green.log`, `playback-recovery.log` in leased DD.
 
+- Session progress: completion remains 100% after close/reopen, 99% stays resumable, repeated Play does not
+  restart audio, elapsed time is observable between words, invalid rates are ignored. Duration estimation
+  counts pauses once and includes heading pauses. Voice changes/close reject stale queue observers.
+- Evidence: four new session tests failed against the prior implementation (12 assertions); fixed combined
+  playback/session suites passed 18/18 and expanded session suite passed 5/5 (Observation included).
+  `session-red.log`, `session-green.log`, `session-observation.log`. Initial macOS app build succeeded.
+- Owned iPhone 17 Pro simulator: `EB170F21-6485-4FB0-9703-11BE9C49E21F` (iOS 26.5).
+
 ## Next
-Audit ReadingSession completion/resume and timing observation next. Prepare Mac/iOS builds and isolated
-simulator for integration checks. Extraction fidelity follows transport/session correctness.
+Extract fidelity regressions for lazy images, list numbering/hidden content, and table cells. Build iOS
+and inspect real controls with the simulator pilot skills; add further synchronization/voice checks.
