@@ -62,4 +62,18 @@ struct ExtractionFidelityTests {
         #expect(items[2].kind == .listItem(ordered: true, number: 1, depth: 0))
         #expect(items[3].kind == .listItem(ordered: true, number: 2, depth: 0))
     }
+    @Test func unspacedLanguagesRemainReadableArticles() async throws {
+        for (language, passage) in [
+            ("zh-Hans", "蜂鸟是一种生活在美洲的小型鸟类，它们能够在空中悬停，也能够向后飞行。科学家通过观察翅膀的运动来研究它们独特的飞行方式。保护森林和花卉有助于这些鸟类在自然环境中生存。"),
+            ("ja", "ハチドリはアメリカ大陸に生息する小さな鳥です。空中で止まることができ、花の蜜を飲みながら植物の受粉を助けています。研究者たちは高速カメラで翼の動きを観察し、その飛行の仕組みを調べています。")
+        ] {
+            let body = (0..<4).map { _ in "<p>\(passage)</p>" }.joined()
+            let html = "<html lang='\(language)'><head><title>鳥の観察</title></head><body><article>\(body)</article></body></html>"
+            let article = try await ArticleExtractor().extract(html: html, baseURL: URL(string: "https://example.com/birds"))
+            #expect(article.language == language)
+            #expect(article.wordCount > 50)
+            #expect(DocumentBuilder.build(article).words.count > 50)
+        }
+    }
+
 }

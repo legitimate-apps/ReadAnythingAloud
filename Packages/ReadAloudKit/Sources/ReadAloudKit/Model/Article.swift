@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 
 /// An extracted, persisted article: metadata plus typed content blocks.
 public struct Article: Codable, Identifiable, Sendable, Hashable {
@@ -47,9 +48,20 @@ public struct Article: Codable, Identifiable, Sendable, Hashable {
 
     /// Number of words across speakable blocks — used for list metadata and time estimates.
     public var wordCount: Int {
-        blocks.filter(\.kind.isSpeakable).reduce(0) { total, block in
-            total + block.plainText.split(whereSeparator: { $0.isWhitespace }).count
+        let tokenizer = NLTokenizer(unit: .word)
+        if let language = language?.split(separator: "-").first {
+            tokenizer.setLanguage(NLLanguage(rawValue: String(language)))
         }
+        var count = 0
+        for block in blocks where block.kind.isSpeakable {
+            let text = block.plainText
+            tokenizer.string = text
+            tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
+                if text[range].contains(where: { $0.isLetter || $0.isNumber }) { count += 1 }
+                return true
+            }
+        }
+        return count
     }
 
     /// Host shown in the library ("nytimes.com").

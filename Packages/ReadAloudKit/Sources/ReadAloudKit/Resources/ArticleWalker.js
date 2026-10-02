@@ -381,10 +381,18 @@
   }
 
   function countWords(blocks) {
+    // Segment the assembled text, not each styling run; CJK words have no separating spaces and an
+    // emphasized fragment inside one English word must not be counted as a separate word.
+    const segmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, { granularity: "word" }) : null;
     let n = 0;
     for (const b of blocks) {
       if (!b.runs || b.k === "caption") continue;
-      for (const r of b.runs) n += (r.t.match(/[\p{L}\p{N}]+/gu) || []).length;
+      const text = b.runs.map(r => r.t).join("");
+      if (segmenter) {
+        for (const part of segmenter.segment(text)) if (part.isWordLike) n++;
+      } else {
+        n += (text.match(/[\p{L}\p{N}]+/gu) || []).length;
+      }
     }
     return n;
   }

@@ -9,7 +9,7 @@ public enum DocumentBuilder {
 
     public static func build(_ article: Article) -> ReadingDocument {
         let language = article.language.flatMap { $0.isEmpty ? nil : $0 } ?? detectLanguage(article)
-        let nlLanguage = language.map { NLLanguage(rawValue: String($0.prefix(2))) }
+        let nlLanguage = language.map { NLLanguage(rawValue: String($0.split(separator: "-").first ?? "en")) }
 
         var text = ""
         var utf16Length = 0

@@ -53,3 +53,17 @@ and inspect real controls with the simulator pilot skills; add further synchroni
   Logs: `extraction-red.log`, `extraction-green.log` in leased DD.
 - iOS simulator app build succeeded (118 s); Mac build succeeded. Full iOS package tests and interactive
   flows remain to run. iOS build log from XcodeBuildMCP `build_sim_2026-10-02T15-03-58-170Z_pid17296_805467f3.log`.
+
+## Parallel push (operator-authorized)
+Operator explicitly requested parallel subagents, independent worktrees and integrator review before 1pm.
+- `astra/extraction-reliability-1002`: ArticleExtractor/PageLoader errors, cancellation, reliable files.
+- `astra/voice-robustness-1002`: Speech engines, long text/chunking, Unicode and timing preservation.
+- `astra/playback-review-1002`: independent review of transport commits plus substantive fixes/interruptions.
+Each has its own sibling worktree/state, same no-spend/no-publishing limits, and reports only here.
+Integrator owns ArticleWalker/Article multilingual counts and reader UI/integration during their work.
+
+## Multilingual extraction
+Chinese fixture was rejected as notReadable (20 regex runs despite hundreds of characters). Use browser
+word segmentation over assembled runs and NaturalLanguage library counts; preserve full primary language
+codes in DocumentBuilder. Fixed extraction + document suite 30/30 passed (`multilingual-red.log`,
+`multilingual-green.log`). Chinese and Japanese extraction/segmentation both covered.
