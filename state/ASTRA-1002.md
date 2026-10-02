@@ -131,3 +131,12 @@ Mac app build passed at0095f5b; universal iOS Simulator app build (arm64+x86_64,
 passed ata16df16 without booting a simulator. `final-mac-build.log`, `final-ios-build.log`.
 Independent reader review found deferred rejoin consumed the forced-layout intent before scrolling ended.
 Root is retaining that intent explicitly and adding a changed distant-target regression; then rebuilding.
+
+## Reader review closed — 12:08 EDT
+Persisted deferred rejoin until reveal actually executes. Distant-target regression exposed insufficient
+post-target layout: estimated document height could clamp a far sentence beneath the controls. Forced
+reveals now lay out a bounded viewport beyond the target on Mac/iOS before computing the scroll position.
+All3 actual Mac renderer tests pass2.229s; distant case failed before the fix. Evidence:
+reader-distant-before.log, reader-final-build.log, reader-final-tests.log. Synthetic rendered JPEGs saved
+under state/evidence/ASTRA-1002/ (browsing-away and rejoined-sentence); visually inspected.
+Only final platform rebuilds, state consolidation, PR and resource cleanup remain. No new feature scope.

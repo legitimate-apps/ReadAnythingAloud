@@ -12,11 +12,15 @@ final class ReaderFollowTests: XCTestCase {
         try await checkRejoin(duringScroll: true)
     }
 
-    private func checkRejoin(duringScroll: Bool) async throws {
+    func testDeferredRejoinAfterPlaybackAdvancesToDistantSentence() async throws {
+        try await checkRejoin(duringScroll: true, advanceTarget: true)
+    }
+
+    private func checkRejoin(duringScroll: Bool, advanceTarget: Bool = false) async throws {
         _ = NSApplication.shared
         let document = DocumentBuilder.build(Article(title: "Reader follow check", language: "en", blocks:
             (0..<70).map { Block(kind: .paragraph, text: "Paragraph \($0) keeps the reader focused on the spoken sentence while allowing a quiet look ahead.") }))
-        let sentence = document.sentences[30].range
+        var sentence = document.sentences[30].range
         var configuration = ReaderTextConfiguration(sentenceRange: sentence, wordRange: nil,
                                                     follow: true, jumpCounter: 0, bottomInset: 90)
         let style = ReaderStyle(theme: .paper)
@@ -55,6 +59,11 @@ final class ReaderFollowTests: XCTestCase {
         XCTAssertEqual(scroll.contentView.bounds.origin.y, 0, accuracy: 1, "Browsing must not snap back")
         attach(scroll, name: "Browsing away from paused sentence")
 
+        if advanceTarget {
+            sentence = document.sentences[60].range
+            configuration.sentenceRange = sentence
+            coordinator.apply(configuration, animated: false)
+        }
         configuration.follow = true
         coordinator.apply(configuration, animated: false)
         if duringScroll {

@@ -123,6 +123,7 @@ struct ReaderTextView: UIViewRepresentable {
         private var lastConfig: ReaderTextConfiguration?
         private var lastScrolledSentence: TextSpan?
         private var userIsScrolling = false
+        private var pendingRejoin = false
         /// Set when new text is installed: the next reveal lays out through its target first.
         private var needsFullLayout = true
 
@@ -169,14 +170,15 @@ struct ReaderTextView: UIViewRepresentable {
             let jumped = config.jumpCounter != lastConfig?.jumpCounter
             let rejoined = config.follow && lastConfig?.follow == false
             // A rejoin can arrive while a drag/deceleration is finishing. Keep the reveal pending.
-            if rejoined { lastScrolledSentence = nil }
+            if rejoined { pendingRejoin = true }
             view.contentInset.bottom = config.bottomInset
             view.verticalScrollIndicatorInsets.bottom = config.bottomInset
-            let refreshGeometry = jumped || rejoined || needsFullLayout
+            let refreshGeometry = jumped || pendingRejoin || needsFullLayout
             if let sentence = config.sentenceRange, (config.follow || jumped), !userIsScrolling,
-               sentence != lastScrolledSentence || jumped || rejoined {
+               sentence != lastScrolledSentence || jumped || pendingRejoin {
                 lastScrolledSentence = sentence
-                reveal(sentence, animated: animated, force: jumped || rejoined)
+                reveal(sentence, animated: animated, force: jumped || pendingRejoin)
+                pendingRejoin = false
             }
             if refreshGeometry { view.highlight.invalidate() }
             view.highlight.update(sentence: parent?.style.highlight.showsSentence == true ? config.sentenceRange : nil,
@@ -190,6 +192,10 @@ struct ReaderTextView: UIViewRepresentable {
             guard let view = textView, let tlm = view.textLayoutManager else { return }
             if force || needsFullLayout {
                 HighlightGeometry.ensureLayout(through: range.upperBound, in: tlm)
+                if let target = HighlightGeometry.rects(for: range.ns, in: tlm, fontSize: parent?.style.fontSize ?? 18).last {
+                    tlm.ensureLayout(for: CGRect(x: 0, y: target.minY, width: view.bounds.width,
+                                                height: view.bounds.height * 2))
+                }
                 view.layoutIfNeeded()
                 needsFullLayout = false
             }
@@ -416,6 +422,7 @@ struct ReaderTextView: NSViewRepresentable {
         private var lastConfig: ReaderTextConfiguration?
         private var lastScrolledSentence: TextSpan?
         private var userIsScrolling = false
+        private var pendingRejoin = false
         /// Set when new text is installed: the next reveal lays out through its target first.
         private var needsFullLayout = true
 
@@ -455,13 +462,14 @@ struct ReaderTextView: NSViewRepresentable {
             let jumped = config.jumpCounter != lastConfig?.jumpCounter
             let rejoined = config.follow && lastConfig?.follow == false
             // A rejoin can arrive while a drag/deceleration is finishing. Keep the reveal pending.
-            if rejoined { lastScrolledSentence = nil }
+            if rejoined { pendingRejoin = true }
             scrollView?.contentInsets.bottom = config.bottomInset
-            let refreshGeometry = jumped || rejoined || needsFullLayout
+            let refreshGeometry = jumped || pendingRejoin || needsFullLayout
             if let sentence = config.sentenceRange, config.follow || jumped, !userIsScrolling,
-               sentence != lastScrolledSentence || jumped || rejoined {
+               sentence != lastScrolledSentence || jumped || pendingRejoin {
                 lastScrolledSentence = sentence
-                reveal(sentence, force: jumped || rejoined)
+                reveal(sentence, force: jumped || pendingRejoin)
+                pendingRejoin = false
             }
             if refreshGeometry { view.resetHighlight() }
             view.setHighlight(sentence: style.highlight.showsSentence ? config.sentenceRange : nil,
@@ -475,6 +483,12 @@ struct ReaderTextView: NSViewRepresentable {
             let initial = needsFullLayout
             if force || needsFullLayout {
                 HighlightGeometry.ensureLayout(through: range.upperBound, in: tlm)
+                // Lay out a viewport beyond the target so the estimated document height cannot clamp
+                // a distant sentence beneath the playback controls when rejoining or seeking.
+                if let target = HighlightGeometry.rects(for: range.ns, in: tlm, fontSize: parent?.style.fontSize ?? 18).last {
+                    tlm.ensureLayout(for: CGRect(x: 0, y: target.minY, width: scroll.contentSize.width,
+                                                height: scroll.contentSize.height * 2))
+                }
                 // NSTextView only grows to what TextKit 2 has laid out so far; make room for the target now.
                 let needed = tlm.usageBoundsForTextContainer.maxY + view.textContainerInset.height * 2
                 if view.frame.height < needed { view.setFrameSize(NSSize(width: view.frame.width, height: needed)) }
