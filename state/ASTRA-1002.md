@@ -67,3 +67,26 @@ Chinese fixture was rejected as notReadable (20 regex runs despite hundreds of c
 word segmentation over assembled runs and NaturalLanguage library counts; preserve full primary language
 codes in DocumentBuilder. Fixed extraction + document suite 30/30 passed (`multilingual-red.log`,
 `multilingual-green.log`). Chinese and Japanese extraction/segmentation both covered.
+
+## Final run timing (operator override)
+Aim fully finished by 12:30pm Eastern October 2; absolute cutoff 1pm or usage reset, whichever first.
+Start nothing new after12:15. At most two active helpers. Voice helper interrupted at11:18; integrator owns
+its existing chunking changes and verification. Extraction and review helpers target returning by12:05.
+
+## Verification environment limitation
+Initial simulator build passed, but interactive launch failed: leased simulator launchd_sim entered U state,
+another booted simulator also showed U state, and a bounded simctl bootstatus child became unreapable ?E.
+XcodeBuildMCP launch timed out after300s. No reboot/shared-service reset performed. No screenshots claimed.
+Mac SwiftPM verification continues; all deferred device-only claims must remain explicitly unproven.
+GitHub authenticated as legitimate-apps; origin main remains121e5c4, public repo, no existing PR history.
+
+## Crash recovery checkpoint — 11:54 EDT
+Terminal crash recovery inspected all worktrees and logs before resuming. Integrated verified long-text
+voice chunking (c56ce5e): exact audio/timing reconstruction, Unicode, cancellation and invalid result
+coverage; 20/20 focused tests passed. Central recovered package suite passed78/78 in12.937s.
+Integrated extraction reliability (6da2178): HTTP/MIME errors, streaming rejection, redirect metadata,
+loader reuse and cancellation;10/10 loader tests,25 broader extraction tests executed passed (2live skips).
+Two recovered helpers maximum; only one build slot. No simulator booted. Review helper is verifying
+interruption/completion/queue cancellation; root is adding a real AppKit reader-follow regression.
+Latest operator timing overrides earlier sections: commit each verified increment immediately with state;
+start nothing new after12:10, wrap at12:20, hard cutoff1pm or usage reset, whichever first.
